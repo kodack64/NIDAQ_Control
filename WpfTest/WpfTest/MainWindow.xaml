@@ -12,15 +12,20 @@
     </Window.CommandBindings>
 
     <shell:WindowChrome.WindowChrome>
-        <shell:WindowChrome CaptionHeight="{x:Static SystemParameters.CaptionHeight}"
-                            ResizeBorderThickness="{x:Static SystemParameters.WindowResizeBorderThickness}" 
-                            GlassFrameThickness="0" />
+<!--        <shell:WindowChrome 
+            CaptionHeight="{x:Static SystemParameters.CaptionHeight}"
+            ResizeBorderThickness="{x:Static SystemParameters.WindowResizeBorderThickness}" 
+            GlassFrameThickness="0" /> -->
+        <shell:WindowChrome 
+            CaptionHeight="0"
+            ResizeBorderThickness="{x:Static SystemParameters.WindowResizeBorderThickness}" 
+            GlassFrameThickness="0" />
     </shell:WindowChrome.WindowChrome>
 
     <Border BorderBrush="Black" BorderThickness="4">
         <Grid ShowGridLines="True">
             <Grid.RowDefinitions>
-<!--                <RowDefinition Height="{x:Static SystemParameters.CaptionHeight}"/> -->
+                <!--                <RowDefinition Height="{x:Static SystemParameters.CaptionHeight}"/> -->
                 <RowDefinition Height="30"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
@@ -52,11 +57,26 @@
                         CommandParameter="{Binding ElementName=window}" />
             </StackPanel>
 
-            <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Vertical" Margin="30" >
+            <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Vertical" Margin="20" >
                 <ToggleButton Name="Button_Run"  Content="Run Sequence" Click="SystemRun" Margin="0,0,0,0"/>
-                <Button Name="Button_LoadSequence"  Content="Load Sequence File" Click="LoadSequence" Margin="0,20,0,0"/>
+                <Button Name="Button_LoadSequence"  Content="Load Sequence File" Click="LoadSequence" Margin="0,60,0,0"/>
                 <Button Name="Button_SaveSequence"  Content="Save Sequence File" Click="SaveSequence" Margin="0,20,0,0"/>
+                <Button Name="Button_AddSequenceRow"  Content="Add Row (I/O Port)" Click="AddRow" Margin="0,60,0,0"/>
+                <Button Name="Button_AddSequenceColumn"  Content="Add Column (Sequence)" Click="AddColumn" Margin="0,20,0,0"/>
             </StackPanel>
+
+            <ScrollViewer Grid.Row="1" Grid.Column="1" Margin="30" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                <Grid Name="SequenceGrid" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" ShowGridLines="True">
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+
+                    <Label Content="Sequence" Grid.Row="0" Grid.Column="0" />
+                </Grid>
+            </ScrollViewer>
         </Grid>
     </Border>
 </Window>

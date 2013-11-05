@@ -28,6 +28,10 @@ namespace WpfTest {
 		Thread workerThread;
 		NIDaqCommunicator communicator;
 		NIDaqSequence seq;
+
+		List<Canvas> rowCanvas = new List<Canvas>();
+		List<Label> columnLabels = new List<Label>();
+
 		public MainWindow() {
 			InitializeComponent();
 			debugWindow = new DebugWindow();
@@ -38,6 +42,85 @@ namespace WpfTest {
 			workerThread = new Thread(communicator.Run);
 
 			this.MouseLeftButtonDown += (sender, e) => this.DragMove();
+
+			SequenceGrid.ColumnDefinitions.Add(new ColumnDefinition() { Width = new GridLength(80) });
+			SequenceGrid.ColumnDefinitions.Add(new ColumnDefinition() { Width = new GridLength(80) });
+
+			Label label;
+			label = new Label() { Content = "1" , HorizontalAlignment = HorizontalAlignment.Left, Name = "First"};
+			label.SetValue(Grid.ColumnProperty, 1);
+			label.SetValue(Grid.RowProperty, 0);
+			SequenceGrid.Children.Add(label);
+			columnLabels.Add(label);
+			label = new Label() { Content = "E", HorizontalAlignment = HorizontalAlignment.Left, Name = "Last"};
+			label.SetValue(Grid.ColumnProperty, 2);
+			label.SetValue(Grid.RowProperty, 0);
+			SequenceGrid.Children.Add(label);
+			columnLabels.Add(label);
+		}
+		private void AddColumn(object sender, RoutedEventArgs e) {
+			this.InsertColumn(2);
+		}
+		private void InsertColumn(int index) {
+			Canvas canvas;
+			Label label;
+			int rowCount = SequenceGrid.RowDefinitions.Count();
+			int columnCount = SequenceGrid.ColumnDefinitions.Count();
+
+			SequenceGrid.ColumnDefinitions.Add(new ColumnDefinition() { Width = new GridLength(80) });
+
+
+			for (int row = 1; row < rowCount; row++) {
+				object obj = LogicalTreeHelper.FindLogicalNode(SequenceGrid, String.Format("Canvas{0}", row));
+				if (obj is Canvas) {
+					canvas = obj as Canvas;
+					canvas.SetValue(Grid.ColumnSpanProperty, columnCount + 1);
+				}
+			}
+
+			{
+				object obj = LogicalTreeHelper.FindLogicalNode(SequenceGrid, "Last");
+				if (obj is Label) {
+					label = obj as Label;
+					label.SetValue(Grid.ColumnProperty, columnCount);
+				}
+			}
+
+			for (int column = columnCount - 2; column >= index; column--) {
+				object obj = LogicalTreeHelper.FindLogicalNode(SequenceGrid, String.Format("SeqLabel{0}", column));
+				if (obj is Label) {
+					label = obj as Label;
+					label.Name = String.Format("SeqLabel{0}", column + 1);
+					label.Content = String.Format("{0}", column + 1);
+					label.SetValue(Grid.ColumnProperty, column + 1);
+				}
+			}
+
+			label = new Label() { Content = String.Format("{0}", index), HorizontalAlignment = HorizontalAlignment.Left, Name = String.Format("SeqLabel{0}", index) };
+			label.SetValue(Grid.ColumnProperty, index);
+			label.SetValue(Grid.RowProperty, 0);
+			SequenceGrid.Children.Add(label);
+		}
+		private void AddRow(object sender, RoutedEventArgs e) {
+			Label label;
+			Canvas canvas;
+
+			int rowCount = SequenceGrid.RowDefinitions.Count();
+			int columnCount = SequenceGrid.ColumnDefinitions.Count();
+
+			SequenceGrid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(80) });
+
+			label = new Label() { Content = String.Format("IO{0}", rowCount), HorizontalAlignment = HorizontalAlignment.Left, Name = String.Format("IOLabel{0}", rowCount) };
+			label.SetValue(Grid.ColumnProperty, 0);
+			String a = label.Name;
+			label.SetValue(Grid.RowProperty, rowCount);
+			SequenceGrid.Children.Add(label);
+
+			canvas = new Canvas() { Background = Brushes.White, Name=String.Format("Canvas{0}",rowCount) };
+			canvas.SetValue(Grid.ColumnProperty, 1);
+			canvas.SetValue(Grid.RowProperty, rowCount);
+			canvas.SetValue(Grid.ColumnSpanProperty, columnCount);
+			SequenceGrid.Children.Add(canvas);
 		}
 		private void WindowMinimize(object sender, RoutedEventArgs e) {
 			this.WindowState = WindowState.Minimized;
@@ -112,20 +195,28 @@ namespace WpfTest {
 		}
 	}
 
+	public class SequencePoint {
+		int index;
+		double position;
+		double span;
+		double value;
+		bool isEnd;
+		int type;
+	}
 	public class NIDaqSequence {
 		private NIDaqSequence(){}
+		private List<SequencePoint> value = new List<SequencePoint>();
 
 		// only accessed from UI thread
 		static public NIDaqSequence getEmptyInstance() {
 			return new NIDaqSequence();
 		}
-		public string toString() {
-			return "";
-		}
 		static public NIDaqSequence fromString() {
 			return new NIDaqSequence();
 		}
-
+		public string toString() {
+			return "";
+		}
 	
 		// only accessed from worker thread
 		public double getAnalogValue(int id, double time) {
