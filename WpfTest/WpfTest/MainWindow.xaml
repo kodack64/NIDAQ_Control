@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="http://schemas.microsoft.com/winfx/2006/xaml/presentation/shell"
-        Title="MainWindow" Height="800" Width="1200" SnapsToDevicePixels="True"
+        Title="NI-DAQ Controller" Height="800" Width="1200" SnapsToDevicePixels="True"
         Background="LightGray">
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static shell:SystemCommands.CloseWindowCommand}" Executed="WindowClose"/>
@@ -38,7 +38,7 @@
                 <ResourceDictionary Source="CaptionFontResource.xaml"/>
             </Grid.Resources>
 
-            <Label Grid.Row="0" Grid.Column="0"  Content="Labview Contoller" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="30,0,0,0" Width="142"/>
+            <Label Grid.Row="0" Grid.Column="0"  Content="NI-DAQ Contoller" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="30,0,0,0" Width="142"/>
 
             <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right">
                 <Button Padding="5,0,5,0" Content="0" 
@@ -61,11 +61,11 @@
                 <ToggleButton Name="Button_Run"  Content="Run Sequence" Click="SystemRun" Margin="0,0,0,0"/>
                 <Button Name="Button_LoadSequence"  Content="Load Sequence File" Click="LoadSequence" Margin="0,60,0,0"/>
                 <Button Name="Button_SaveSequence"  Content="Save Sequence File" Click="SaveSequence" Margin="0,20,0,0"/>
-                <Button Name="Button_AddSequenceRow"  Content="Add Row (I/O Port)" Click="AddRow" Margin="0,60,0,0"/>
-                <Button Name="Button_AddSequenceColumn"  Content="Add Column (Sequence)" Click="AddColumn" Margin="0,20,0,0"/>
+                <Button Name="Button_AddSequenceRow"  Content="Add I/O Port" Click="Callback_InsertRow" Margin="0,60,0,0" />
+                <Button Name="Button_AddSequenceColumn"  Content="Add Time Sequence" Click="Callback_InsertColumn" Margin="0,20,0,0"/>
             </StackPanel>
 
-            <ScrollViewer Grid.Row="1" Grid.Column="1" Margin="30" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <ScrollViewer Grid.Row="1" Grid.Column="1" Margin="30" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="WhiteSmoke">
                 <Grid Name="SequenceGrid" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" ShowGridLines="True">
                     <Grid.RowDefinitions>
                         <RowDefinition/>
