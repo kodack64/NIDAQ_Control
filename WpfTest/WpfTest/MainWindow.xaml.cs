@@ -38,18 +38,100 @@ namespace WpfTest {
 		// signal sequence
 		NIDaqSequence seq;
 		
-		// sequence label array
-		List<Label> sequenceLabelList = new List<Label>();
-		private int uniqueSequenceId = 0;
-		// IO label array
-		List<Label> IOLabelList = new List<Label>();
-		private int uniqueIOLabelId = 0;
-		// canvas array
-		List<Canvas> canvasList = new List<Canvas>();
+		// Column array
+		List<ColumnInfo> columnList = new List<ColumnInfo>();
+		private int uniqueColumnId = 0;
+
+		// Row array
+		List<RowInfo> rowList = new List<RowInfo>();
+		private int uniqueRowId = 0;
+
+		static MainWindow myInstance;
+
+		class ColumnInfo {
+			public Label sequenceLabel { get; private set; }
+			public string myName { get; set; }
+			public int myIndex { get; set; }
+			public int timespan { get; set; }
+			public TimeUnit timeUnit { get; set; }
+			public enum TimeUnit {
+				s,
+				ms,
+				us
+			}
+			public ColumnInfo() {
+				sequenceLabel = new Label();
+				sequenceLabel.SetValue(Grid.RowProperty,0);
+			}
+			public void SetName(string name) {
+				myName = name;
+				sequenceLabel.Content = myName;
+			}
+			public void SetColumn(int index) {
+				sequenceLabel.SetValue(Grid.ColumnProperty,index+1);
+			}
+		}
+		class RowInfo {
+			public Label IOLabel{get;private set;}
+			public Canvas canvas { get; private set; }
+			public string myName { get; set; }
+			public int myBindingId { get; set; }
+			public bool isAnalog { get; set; }
+			public List<double> positionArray { get; set; }
+			public RowInfo() {
+				IOLabel = new Label();
+				canvas = new Canvas() { Background=Brushes.WhiteSmoke};
+				positionArray = new List<double>();
+				IOLabel.SetValue(Grid.ColumnProperty,0);
+				canvas.SetValue(Grid.ColumnProperty, 1);
+			}
+			public void SetName(string name) {
+				myName = name;
+				IOLabel.Content = myName;
+			}
+			public void AddColumn(int column,int inserted) {
+//				positionArray.Insert(inserted, positionArray[inserted]);
+				canvas.SetValue(Grid.ColumnSpanProperty,column);
+			}
+			public void EraseColumn(int column,int erased) {
+//				positionArray.Remove(erased);
+				canvas.SetValue(Grid.ColumnSpanProperty, column);
+			}
+			public void SetRow(int index) {
+				IOLabel.SetValue(Grid.RowProperty,index+1);
+				canvas.SetValue(Grid.RowProperty, index + 1);
+			}
+			public void SetColumnSpan(int span) {
+				canvas.SetValue(Grid.ColumnSpanProperty, span);
+				canvas.ContextMenu = new ContextMenu();
+				MenuItem item = new MenuItem();
+				item.Header = "Insert Column to →";
+				item.Click += MainWindow.myInstance.Callback_InsertColumn;
+				canvas.ContextMenu.Items.Add(item);
+				item = new MenuItem();
+				item.Header = "Insert Row to ↓";
+				item.Click += MainWindow.myInstance.Callback_InsertRow;
+				canvas.ContextMenu.Items.Add(item);
+				item = new MenuItem();
+				item.Header = "Erase This Row";
+				item.Click += MainWindow.myInstance.Callback_EraseRow;
+				canvas.ContextMenu.Items.Add(item);
+				item = new MenuItem();
+				item.Header = "Erase This Column";
+				item.Click += MainWindow.myInstance.Callback_EraseColumn;
+				canvas.ContextMenu.Items.Add(item);
+
+				positionArray.Clear();
+				for (int i = 0; i < span; i++) {
+					positionArray.Add(0);
+				}
+			}
+		}
 
 		// constructor
 		public MainWindow() {
 			InitializeComponent();
+			myInstance = this;
 			debugWindow = new DebugWindow();
 			debugWindow.Show();
 
@@ -60,18 +142,6 @@ namespace WpfTest {
 			this.MouseLeftButtonDown += (sender, e) => this.DragMove();
 
 			this.InsertColumn(0);
-		}
-
-		public class UIElementFactory {
-			public static Label createIOLabel(int id) {
-				return null;
-			}
-			public static Label createSequenceLabel(int id) {
-				return null;
-			}
-			public static Canvas createCanvas(int id) {
-				return null;
-			}
 		}
 
 		// callback insert column to sequence
@@ -87,7 +157,7 @@ namespace WpfTest {
 				}
 			} else {
 				// if event invoker is button , insert right most
-				this.InsertColumn(sequenceLabelList.Count);
+				this.InsertColumn(columnList.Count);
 			}
 		}
 
@@ -104,7 +174,7 @@ namespace WpfTest {
 				}
 			} else {
 				// if event invoker is button , insert lower most
-				this.InsertRow(IOLabelList.Count);
+				this.InsertRow(rowList.Count);
 			}
 		}
 
@@ -143,21 +213,21 @@ namespace WpfTest {
 			SequenceGrid.ColumnDefinitions.Add(new ColumnDefinition() { Width = new GridLength(80) });
 
 			// add new label instance
-			Label label = new Label() { Content = String.Format("Seq{0}", uniqueSequenceId), HorizontalAlignment = HorizontalAlignment.Left, Name = String.Format("SeqLabel{0}", index) };
-			label.SetValue(Grid.ColumnProperty, index+1);
-			label.SetValue(Grid.RowProperty, 0);
-			SequenceGrid.Children.Add(label);
-			sequenceLabelList.Insert(index,label);
-			uniqueSequenceId++;
+			ColumnInfo colinfo = new ColumnInfo();
+			colinfo.SetName(String.Format("Seq{0}", uniqueColumnId));
+			colinfo.SetColumn(index);
+			SequenceGrid.Children.Add(colinfo.sequenceLabel);
+			columnList.Insert(index,colinfo);
+			uniqueColumnId++;
 
 			// expands column span of all canvases
-			for (int row = 0; row < canvasList.Count; row++) {
-				canvasList[row].SetValue(Grid.ColumnSpanProperty, sequenceLabelList.Count + 1);
+			for (int row = 0; row < rowList.Count; row++) {
+				rowList[row].AddColumn(columnList.Count,index);
 			}
 
 			// re-label right sequence label cell index
-			for (int column = index+1 ; column < sequenceLabelList.Count ; column++) {
-				sequenceLabelList[column].SetValue(Grid.ColumnProperty, column + 1);
+			for (int column = index+1 ; column < columnList.Count ; column++) {
+				columnList[column].SetColumn(column);
 			}
 		}
 
@@ -168,44 +238,18 @@ namespace WpfTest {
 			SequenceGrid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(80) });
 
 			// add new IO label instance
-			Label label = new Label() { Content = String.Format("IO{0}", uniqueIOLabelId), HorizontalAlignment = HorizontalAlignment.Left };
-			label.SetValue(Grid.ColumnProperty, 0);
-			label.SetValue(Grid.RowProperty, index+1);
-			SequenceGrid.Children.Add(label);
-			IOLabelList.Insert(index, label);
-			uniqueIOLabelId++;
-
-			// add new canvas
-			Canvas canvas = new Canvas() { Background = Brushes.White };
-			canvas.SetValue(Grid.ColumnProperty, 1);
-			canvas.SetValue(Grid.RowProperty, index+1);
-			canvas.SetValue(Grid.ColumnSpanProperty, sequenceLabelList.Count);
-			canvas.ContextMenu = new ContextMenu();
-			MenuItem item = new MenuItem();
-			item.Header = "Insert Column to →";
-			item.Click += Callback_InsertColumn;
-			canvas.ContextMenu.Items.Add(item);
-			item = new MenuItem();
-			item.Header = "Insert Row to ↓";
-			item.Click += Callback_InsertRow;
-			canvas.ContextMenu.Items.Add(item);
-			item = new MenuItem();
-			item.Header = "Erase This Row";
-			item.Click += Callback_EraseRow;
-			canvas.ContextMenu.Items.Add(item);
-			item = new MenuItem();
-			item.Header = "Erase This Column";
-			item.Click += Callback_EraseColumn;
-			canvas.ContextMenu.Items.Add(item);
-	
-			SequenceGrid.Children.Add(canvas);
-			canvasList.Insert(index, canvas);
-
+			RowInfo rowinfo = new RowInfo();
+			rowinfo.SetName(String.Format("IO{0}", uniqueRowId));
+			rowinfo.SetRow(index);
+			rowinfo.SetColumnSpan(columnList.Count);
+			SequenceGrid.Children.Add(rowinfo.IOLabel);
+			SequenceGrid.Children.Add(rowinfo.canvas);
+			rowList.Insert(index, rowinfo);
+			uniqueRowId++;
 
 			// re-label IO label and canvas
-			for (int row = index + 1; row < canvasList.Count; row++) {
-				canvasList[row].SetValue(Grid.RowProperty, row + 1);
-				IOLabelList[row].SetValue(Grid.RowProperty, row + 1);
+			for (int row = index + 1; row < rowList.Count; row++) {
+				rowList[row].SetRow(row);
 			}
 		}
 
@@ -213,17 +257,17 @@ namespace WpfTest {
 		private void EraseColumn(int index) {
 
 			// remove label instance
-			SequenceGrid.Children.Remove(sequenceLabelList[index-1]);
-			sequenceLabelList.RemoveAt(index-1);
+			SequenceGrid.Children.Remove(columnList[index].sequenceLabel);
+			columnList.RemoveAt(index);
 
 			// shrink column span of all canvases
-			for (int row = 0; row < canvasList.Count; row++) {
-				canvasList[row].SetValue(Grid.ColumnSpanProperty, sequenceLabelList.Count);
+			for (int row = 0; row < rowList.Count; row++) {
+				rowList[row].EraseColumn(columnList.Count,index);
 			}
 
 			// re-label right sequence label cell index
-			for (int column = index-1 ; column < sequenceLabelList.Count; column++) {
-				sequenceLabelList[column].SetValue(Grid.ColumnProperty, column +1);
+			for (int column = index ; column < columnList.Count; column++) {
+				columnList[column].SetColumn(column);
 			}
 
 			// remove column
@@ -236,15 +280,13 @@ namespace WpfTest {
 		private void EraseRow(int index) {
 
 			// remove label and canvasn instance
-			SequenceGrid.Children.Remove(IOLabelList[index-1]);
-			SequenceGrid.Children.Remove(canvasList[index-1]);
-			IOLabelList.RemoveAt(index-1);
-			canvasList.RemoveAt(index-1);
+			SequenceGrid.Children.Remove(rowList[index-1].IOLabel);
+			SequenceGrid.Children.Remove(rowList[index-1].canvas);
+			rowList.RemoveAt(index);
 
 			// re-label IO label and canvas
-			for (int row = index-1 ; row < canvasList.Count; row++) {
-				canvasList[row].SetValue(Grid.RowProperty, row +1);
-				IOLabelList[row].SetValue(Grid.RowProperty, row +1);
+			for (int row = index ; row < rowList.Count; row++) {
+				rowList[row].SetRow( row +1);
 			}
 
 			// remove row
