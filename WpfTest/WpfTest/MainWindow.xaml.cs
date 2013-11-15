@@ -60,7 +60,7 @@ namespace WpfTest {
 				us
 			}
 			public ColumnInfo() {
-				sequenceLabel = new Label();
+				sequenceLabel = new Label() { Background=Brushes.Gray};
 				sequenceLabel.SetValue(Grid.RowProperty,0);
 			}
 			public void SetName(string name) {
@@ -79,11 +79,15 @@ namespace WpfTest {
 			public bool isAnalog { get; set; }
 			public List<double> positionArray { get; set; }
 			public RowInfo() {
-				IOLabel = new Label();
-				canvas = new Canvas() { Background=Brushes.WhiteSmoke};
+				IOLabel = new Label() { Background=Brushes.Gray};
+				canvas = new Canvas() { Background=Brushes.White};
+				canvas.ContextMenuOpening += new ContextMenuEventHandler(CheckContextMenu);
 				positionArray = new List<double>();
 				IOLabel.SetValue(Grid.ColumnProperty,0);
 				canvas.SetValue(Grid.ColumnProperty, 1);
+			}
+			public void CheckContextMenu(object sender,ContextMenuEventArgs e){
+
 			}
 			public void SetName(string name) {
 				myName = name;
@@ -146,64 +150,75 @@ namespace WpfTest {
 
 		// callback insert column to sequence
 		private void Callback_InsertColumn(object sender, RoutedEventArgs e) {
+
+			int index = columnList.Count;
 			// if event invoker is canvas grid cell , insert left of cell column
 			if(e.Source is MenuItem){
 				Canvas canvas = ((e.Source as MenuItem).Parent as ContextMenu).PlacementTarget as Canvas;
 				if (canvas != null) {
 					int? column = canvas.GetValue(Grid.ColumnProperty) as int?;
 					if (column.HasValue) {
-						this.InsertColumn(column.Value);
+						index = column.Value;
 					}
 				}
-			} else {
-				// if event invoker is button , insert right most
-				this.InsertColumn(columnList.Count);
 			}
+			this.InsertColumn(index);
+			debugWindow.WriteLine(String.Format("Insert Column to index={0}",index));
 		}
 
 		// callback insert row to sequence
 		private void Callback_InsertRow(object sender, RoutedEventArgs e) {
+
+			int index = rowList.Count;
 			// if event invoker is canvas grid cell , insert bottom of cell row
 			if (e.Source is MenuItem) {
 				Canvas canvas = ((e.Source as MenuItem).Parent as ContextMenu).PlacementTarget as Canvas;
 				if (canvas != null) {
 					int? row = canvas.GetValue(Grid.RowProperty) as int?;
 					if (row.HasValue) {
-						this.InsertRow(row.Value);
+						index = row.Value;
 					}
 				}
-			} else {
-				// if event invoker is button , insert lower most
-				this.InsertRow(rowList.Count);
 			}
+			this.InsertRow(index);
+			debugWindow.WriteLine(String.Format("Insert Row to index={0}", index));
 		}
 
 		// callback erase column to sequence
 		private void Callback_EraseColumn(object sender, RoutedEventArgs e) {
+
+			int index = -1;
+	
 			// if event invoker is canvas grid cell , erase this column
 			if (e.Source is MenuItem) {
 				Canvas canvas = ((e.Source as MenuItem).Parent as ContextMenu).PlacementTarget as Canvas;
 				if (canvas != null) {
 					int? column = canvas.GetValue(Grid.ColumnProperty) as int?;
 					if (column.HasValue) {
-						this.EraseColumn(column.Value);
+						index = column.Value-1;
 					}
 				}
 			}
+
+			if(index!=-1)this.EraseColumn(index);
+			debugWindow.WriteLine(String.Format("Erase Row where index={0}", index));
 		}
 
 		// callback insert row to sequence
 		private void Callback_EraseRow(object sender, RoutedEventArgs e) {
+			int index = -1;
 			// if event invoker is canvas grid cell , erase this row
 			if (e.Source is MenuItem) {
 				Canvas canvas = ((e.Source as MenuItem).Parent as ContextMenu).PlacementTarget as Canvas;
 				if (canvas != null) {
 					int? row = canvas.GetValue(Grid.RowProperty) as int?;
 					if (row.HasValue) {
-						this.EraseRow(row.Value);
+						index = row.Value-1;
 					}
 				}
 			}
+			if (index != -1) this.EraseRow(index);
+			debugWindow.WriteLine(String.Format("Erase Row where index={0}", index));
 		}
 
 		// insert new column to UI
@@ -272,26 +287,23 @@ namespace WpfTest {
 
 			// remove column
 			SequenceGrid.ColumnDefinitions.RemoveAt(SequenceGrid.ColumnDefinitions.Count-1);
-
 		}
 
 
 		// erase row
 		private void EraseRow(int index) {
-
 			// remove label and canvasn instance
-			SequenceGrid.Children.Remove(rowList[index-1].IOLabel);
-			SequenceGrid.Children.Remove(rowList[index-1].canvas);
+			SequenceGrid.Children.Remove(rowList[index].IOLabel);
+			SequenceGrid.Children.Remove(rowList[index].canvas);
 			rowList.RemoveAt(index);
 
 			// re-label IO label and canvas
 			for (int row = index ; row < rowList.Count; row++) {
-				rowList[row].SetRow( row +1);
+				rowList[row].SetRow( row);
 			}
 
 			// remove row
 			SequenceGrid.RowDefinitions.RemoveAt(SequenceGrid.RowDefinitions.Count - 1);
-
 		}
 
 
