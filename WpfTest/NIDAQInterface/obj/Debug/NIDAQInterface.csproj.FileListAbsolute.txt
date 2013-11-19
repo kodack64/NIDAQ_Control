@@ -1,0 +1,5 @@
+C:\Users\Yasunari\Desktop\NIDAQ_Control\WpfTest\NIDAQInterface\bin\Debug\NIDAQInterface.dll
+C:\Users\Yasunari\Desktop\NIDAQ_Control\WpfTest\NIDAQInterface\bin\Debug\NIDAQInterface.pdb
+C:\Users\Yasunari\Desktop\NIDAQ_Control\WpfTest\NIDAQInterface\obj\Debug\NIDAQInterface.csprojResolveAssemblyReference.cache
+C:\Users\Yasunari\Desktop\NIDAQ_Control\WpfTest\NIDAQInterface\obj\Debug\NIDAQInterface.dll
+C:\Users\Yasunari\Desktop\NIDAQ_Control\WpfTest\NIDAQInterface\obj\Debug\NIDAQInterface.pdb
