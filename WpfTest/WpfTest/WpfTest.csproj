@@ -76,7 +76,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Sequences.cs" />
+    <Compile Include="Channel.cs" />
+    <Compile Include="Sequence.cs" />
     <Page Include="CaptionFontResource.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

@@ -5,10 +5,10 @@
         Title="NI-DAQ Controller" Height="800" Width="1200" SnapsToDevicePixels="True"
         Background="LightGray">
     <Window.CommandBindings>
-        <CommandBinding Command="{x:Static shell:SystemCommands.CloseWindowCommand}" Executed="WindowClose"/>
-        <CommandBinding Command="{x:Static shell:SystemCommands.MaximizeWindowCommand}" Executed="WindowMaximize"/>
-        <CommandBinding Command="{x:Static shell:SystemCommands.MinimizeWindowCommand}" Executed="WindowMinimize"/>
-        <CommandBinding Command="{x:Static shell:SystemCommands.RestoreWindowCommand}" Executed="WindowRestore"/>
+        <CommandBinding Command="{x:Static shell:SystemCommands.CloseWindowCommand}" Executed="Callback_WindowClose"/>
+        <CommandBinding Command="{x:Static shell:SystemCommands.MaximizeWindowCommand}" Executed="Callback_WindowMaximize"/>
+        <CommandBinding Command="{x:Static shell:SystemCommands.MinimizeWindowCommand}" Executed="Callback_WindowMinimize"/>
+        <CommandBinding Command="{x:Static shell:SystemCommands.RestoreWindowCommand}" Executed="Callback_WindowRestore"/>
     </Window.CommandBindings>
 
     <shell:WindowChrome.WindowChrome>
@@ -49,7 +49,7 @@
                 <Button Padding="5,0,5,0" Content="1" Name="ToggleFullscreen"
                         Style="{DynamicResource CaptionButtonStyleKey}" 
                         shell:WindowChrome.IsHitTestVisibleInChrome="True" 
-                        Click="WindowMaximize"/>
+                        Click="Callback_WindowMaximize"/>
                 <Button Padding="5,0,5,0" Content="r" 
                         Style="{DynamicResource CaptionButtonStyleKey}" 
                         shell:WindowChrome.IsHitTestVisibleInChrome="True" 
@@ -58,11 +58,11 @@
             </StackPanel>
 
             <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Vertical" Margin="20" >
-                <ToggleButton Name="Button_Run"  Content="Run Sequence" Click="SystemRun" Margin="0,0,0,0"/>
-                <Button Name="Button_LoadSequence"  Content="Load Sequence File" Click="LoadSequence" Margin="0,60,0,0"/>
-                <Button Name="Button_SaveSequence"  Content="Save Sequence File" Click="SaveSequence" Margin="0,20,0,0"/>
-                <Button Name="Button_AddSequenceRow"  Content="Add I/O Port" Click="Callback_InsertRow" Margin="0,60,0,0" />
-                <Button Name="Button_AddSequenceColumn"  Content="Add Time Sequence" Click="Callback_InsertColumn" Margin="0,20,0,0"/>
+                <ToggleButton Name="Button_Run"  Content="Run Sequence" Click="Callback_SystemRun" Margin="0,0,0,0"/>
+                <Button Name="Button_LoadSequence"  Content="Load Sequence File" Click="Callback_LoadSequence" Margin="0,60,0,0"/>
+                <Button Name="Button_SaveSequence"  Content="Save Sequence File" Click="Callback_SaveSequence" Margin="0,20,0,0"/>
+                <Button Name="Button_AddSequenceRow"  Content="Add I/O Port" Click="Callback_InsertChannel" Margin="0,60,0,0" />
+                <Button Name="Button_AddSequenceColumn"  Content="Add Time Sequence" Click="Callback_InsertDivision" Margin="0,20,0,0"/>
             </StackPanel>
 
             <ScrollViewer Grid.Row="1" Grid.Column="1" Margin="30" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="WhiteSmoke">
@@ -74,7 +74,7 @@
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
 
-                    <Label Content="Sequence" Grid.Row="0" Grid.Column="0" />
+<!--                    <Label Name="Label_SequenceTitle" Content="Sequence" Grid.Row="0" Grid.Column="0" /> -->
                 </Grid>
             </ScrollViewer>
         </Grid>

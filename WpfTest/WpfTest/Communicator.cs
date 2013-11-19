@@ -11,7 +11,7 @@ namespace WpfTest
     public class NIDaqCommunicator
     {
         public DebugWindow debugWindow = null;
-        private NIDAQ.Sequences seq;
+        private NIDaq.Sequences seq;
         private int maxAnalogInput;
         private int maxAnalogOutput;
         private int maxDigitalInput;
@@ -19,7 +19,7 @@ namespace WpfTest
         private double frequency;
         private volatile bool runningFlag;
 
-        public NIDaqCommunicator(NIDAQ.Sequences _seq)
+        public NIDaqCommunicator(NIDaq.Sequences _seq)
         {
             seq = _seq;
             maxAnalogInput = 10;
