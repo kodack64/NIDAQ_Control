@@ -96,8 +96,9 @@ namespace WpfTest {
 				channelCanvas.ContextMenu.Items.Add(itemHead);
 			}
 			public void editValue() {
-				MainWindow window = new MainWindow();
+				EditValueWindow window = new EditValueWindow();
 				window.Show();
+
 			}
 			public void setPosition(int row) {
 				myRow = row;
