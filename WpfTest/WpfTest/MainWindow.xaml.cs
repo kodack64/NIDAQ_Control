@@ -15,6 +15,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Threading;
 using System.Diagnostics;
+using System.IO;
 using Microsoft.Win32;
 
 
@@ -24,7 +25,6 @@ namespace WpfTest {
 	/// </summary>
 	public partial class MainWindow : Window {
 
-	
 		// ログ表示用ウィンドウ
 		DebugWindow debugWindow;
 
@@ -35,7 +35,7 @@ namespace WpfTest {
 		NIDaqCommunicator communicator;
 
 		// シーケンス
-		NIDaqSequence seq;
+		NIDaq.Sequences seq;
 		
 		// 行リスト
 		List<ColumnInfo> columnList = new List<ColumnInfo>();
@@ -48,7 +48,7 @@ namespace WpfTest {
 		private int uniqueRowId = 0;
 
 		// ウィンドウの自身のインスタンス
-		static MainWindow myInstance;
+		public static MainWindow myInstance;
 
 		// 列（シーケンス）情報
 		class ColumnInfo {
@@ -119,21 +119,21 @@ namespace WpfTest {
 				itemHead.Header = "Edit Sequence";
 				{
 					item = new MenuItem();
-					item.Header = "Insert Column to ←";
-					item.Click += MainWindow.myInstance.Callback_InsertColumn;
+					item.Header = "Insert Division to ←";
+					item.Click += MainWindow.myInstance.Callback_InsertDivision;
 					itemHead.Items.Add(item);
 					item = new MenuItem();
-					item.Header = "Insert Row to ↓";
-					item.Click += MainWindow.myInstance.Callback_InsertRow;
+					item.Header = "Insert Channel to ↓";
+					item.Click += MainWindow.myInstance.Callback_InsertChannel;
 					itemHead.Items.Add(item);
 					item = new MenuItem();
-					item.Header = "Erase This Row";
-					item.Click += MainWindow.myInstance.Callback_EraseRow;
-					itemHead.Items.Add(item);
-					item = new MenuItem();
-					item.Header = "Erase This Column";
-					item.Click += MainWindow.myInstance.Callback_EraseColumn;
+					item.Header = "Remove This Division";
+					item.Click += MainWindow.myInstance.Callback_RemoveDivision;
 					if (isLast) item.IsEnabled = false;
+					itemHead.Items.Add(item);
+					item = new MenuItem();
+					item.Header = "Remove This Channel";
+					item.Click += MainWindow.myInstance.Callback_RemoveChannel;
 					itemHead.Items.Add(item);
 				}
 				canvas.ContextMenu.Items.Add(itemHead);
@@ -210,7 +210,9 @@ namespace WpfTest {
 			debugWindow.Show();
 
 			//動作スレッドの初期化
-			seq = NIDaqSequence.getEmptyInstance();
+			seq = new NIDaq.Sequences();
+			seq.currentSequence.bindGridUI(SequenceGrid);
+
 			communicator = new NIDaqCommunicator(seq);
 			workerThread = new Thread(communicator.Run);
 
@@ -218,14 +220,16 @@ namespace WpfTest {
 			this.MouseLeftButtonDown += (sender, e) => this.DragMove();
 
 			//とりあえずシーケンスとIOをひとつ入れる。
-			this.InsertColumn(0);
-			this.InsertRow(0);
+//			this.InsertColumn(0);
+//			this.InsertRow(0);
 			repaint();
 		}
 
 		// 列挿入のコールバック
-		private void Callback_InsertColumn(object sender, RoutedEventArgs e) {
+		private void Callback_InsertDivision(object sender, RoutedEventArgs e) {
+			seq.currentSequence.insertDivision(seq.currentSequence.getDivisionCount()-1);
 
+/*
 			int index = columnList.Count;
 			// コンテキストメニューからの呼び出しの場合、親のキャンバスのクリックされた列を取得
 			if(e.Source is MenuItem){
@@ -241,12 +245,13 @@ namespace WpfTest {
 			this.InsertColumn(index);
 			this.repaint();
 			debugWindow.WriteLine(String.Format("Insert Column to index={0}",index));
+ * */
 		}
 
 		// 行挿入のコールバック
-		private void Callback_InsertRow(object sender, RoutedEventArgs e) {
-
-			int index = rowList.Count;
+		private void Callback_InsertChannel(object sender, RoutedEventArgs e) {
+			seq.currentSequence.insertChannel(seq.currentSequence.getChannelCount());
+/*			int index = rowList.Count;
 			if (e.Source is MenuItem) {
 				Canvas canvas = (((e.Source as MenuItem).Parent as MenuItem).Parent as ContextMenu).PlacementTarget as Canvas;
 				if (canvas != null) {
@@ -259,29 +264,34 @@ namespace WpfTest {
 			this.InsertRow(index);
 			this.repaint();
 			debugWindow.WriteLine(String.Format("Insert Row to index={0}", index));
+ * */
 		}
 
 		// 列削除のコールバック
-		private void Callback_EraseColumn(object sender, RoutedEventArgs e) {
-
-			int index = -1;
+		private void Callback_RemoveDivision(object sender, RoutedEventArgs e) {
+			seq.currentSequence.removeDivision(0);
+			/*
+						int index = -1;
 	
-			if (e.Source is MenuItem) {
-				Canvas canvas = (((e.Source as MenuItem).Parent as MenuItem).Parent as ContextMenu).PlacementTarget as Canvas;
-				for (int i = 0; i < rowList.Count; i++) {
-					if (canvas == rowList[i].canvas) {
-						index = rowList[i].currentTargetColumn;
-					}
-				}
-			}
+						if (e.Source is MenuItem) {
+							Canvas canvas = (((e.Source as MenuItem).Parent as MenuItem).Parent as ContextMenu).PlacementTarget as Canvas;
+							for (int i = 0; i < rowList.Count; i++) {
+								if (canvas == rowList[i].canvas) {
+									index = rowList[i].currentTargetColumn;
+								}
+							}
+						}
 
-			if(index!=-1)this.EraseColumn(index);
-			this.repaint();
-			debugWindow.WriteLine(String.Format("Erase Row where index={0}", index));
+						if(index!=-1)this.EraseColumn(index);
+						this.repaint();
+						debugWindow.WriteLine(String.Format("Erase Row where index={0}", index));
+			 * */
 		}
 
 		// 行削除のコールバック
-		private void Callback_EraseRow(object sender, RoutedEventArgs e) {
+		private void Callback_RemoveChannel(object sender, RoutedEventArgs e) {
+			seq.currentSequence.removeChannel(0);
+			/*
 			int index = -1;
 			if (e.Source is MenuItem) {
 				Canvas canvas = (((e.Source as MenuItem).Parent as MenuItem).Parent as ContextMenu).PlacementTarget as Canvas;
@@ -295,6 +305,7 @@ namespace WpfTest {
 			if (index != -1) this.EraseRow(index);
 			this.repaint();
 			debugWindow.WriteLine(String.Format("Erase Row where index={0}", index));
+			 * */
 		}
 
 		// 列の挿入
@@ -372,27 +383,26 @@ namespace WpfTest {
 			SequenceGrid.RowDefinitions.RemoveAt(SequenceGrid.RowDefinitions.Count - 1);
 		}
 
-
 		// 最小化
-		private void WindowMinimize(object sender, RoutedEventArgs e) {
+		private void Callback_WindowMinimize(object sender, RoutedEventArgs e) {
 			this.WindowState = WindowState.Minimized;
 		}
 		// 最大とトグル
-		private void WindowMaximize(object sender, RoutedEventArgs e) {
+		private void Callback_WindowMaximize(object sender, RoutedEventArgs e) {
 			this.WindowState = WindowState.Maximized;
 			ToggleFullscreen.Content = "2";
-			ToggleFullscreen.Click -= this.WindowMaximize;
-			ToggleFullscreen.Click += this.WindowRestore;
+			ToggleFullscreen.Click -= this.Callback_WindowMaximize;
+			ToggleFullscreen.Click += this.Callback_WindowRestore;
 		}
 		// 通常へトグル
-		private void WindowRestore(object sender, RoutedEventArgs e) {
+		private void Callback_WindowRestore(object sender, RoutedEventArgs e) {
 			this.WindowState = WindowState.Normal;
 			ToggleFullscreen.Content = "1";
-			ToggleFullscreen.Click += this.WindowMaximize;
-			ToggleFullscreen.Click -= this.WindowRestore;
+			ToggleFullscreen.Click += this.Callback_WindowMaximize;
+			ToggleFullscreen.Click -= this.Callback_WindowRestore;
 		}
 		// 閉じる
-		private void WindowClose(object sender, RoutedEventArgs e) {
+		private void Callback_WindowClose(object sender, RoutedEventArgs e) {
 			if (workerThread.IsAlive) {
 				communicator.Stop();
 				debugWindow.WriteLine("Request stop communicator");
@@ -404,7 +414,7 @@ namespace WpfTest {
 		}
 
 		// 起動ボタンの処理
-		private void SystemRun(object sender, RoutedEventArgs e) {
+		private void Callback_SystemRun(object sender, RoutedEventArgs e) {
 
 			ToggleButton element = sender as ToggleButton;
 
@@ -434,7 +444,7 @@ namespace WpfTest {
 		}
 
 		// シーケンスファイルのロード
-		private void LoadSequence(object sender, RoutedEventArgs e) {
+		private void Callback_LoadSequence(object sender, RoutedEventArgs e) {
 			OpenFileDialog dialog = new OpenFileDialog() {
 				Multiselect=false,
 				Filter="seqファイル|*.seq"
@@ -442,167 +452,30 @@ namespace WpfTest {
 			bool? result = dialog.ShowDialog();
 			if (result.HasValue) {
 				if(result.Value){
-					string fileName = dialog.FileName;
-					debugWindow.WriteLine(String.Format("Open sequence file {0}",fileName));
+					seq.currentSequence.fromText(File.ReadAllText(dialog.FileName));
+					debugWindow.WriteLine(String.Format("Open sequence file {0}",dialog.FileName));
 				}
 			}
 		}
 
 		// シーケンスファイルのセーブ
-		private void SaveSequence(object sender, RoutedEventArgs e) {
+		private void Callback_SaveSequence(object sender, RoutedEventArgs e) {
 			SaveFileDialog dialog = new SaveFileDialog() {
 				Filter="seqファイル|*.seq"
 			};
 			bool? result = dialog.ShowDialog();
 			if (result.HasValue) {
 				if (result.Value) {
-					string fileName = dialog.FileName;
-					debugWindow.WriteLine(String.Format("Save sequence file {0}",fileName));
+					StreamWriter sw = File.CreateText(dialog.FileName);
+					sw.Write(seq.currentSequence.toText());
+					debugWindow.WriteLine(String.Format("Save sequence file {0}", dialog.FileName));
 				}
 			}
 		}
 
 		// キャンバスの再描画
 		public void repaint() {
-			for (int i = 0; i < rowList.Count; i++) {
-				rowList[i].repaint();
-			}
-		}
-	}
-
-	public class SequencePoint {
-		int index;
-		double position;
-		double span;
-		double value;
-		bool isEnd;
-		int type;
-	}
-
-	//シーケンス
-	public class NIDaqSequence {
-		private NIDaqSequence(){}
-		private List<SequencePoint> value = new List<SequencePoint>();
-
-		// only accessed from UI thread
-		static public NIDaqSequence getEmptyInstance() {
-			return new NIDaqSequence();
-		}
-		static public NIDaqSequence fromString() {
-			return new NIDaqSequence();
-		}
-		public string toString() {
-			return "";
-		}
-	
-		// only accessed from worker thread
-		public double getAnalogValue(int id, double time) {
-			return 0;
-		}
-		public bool getDigitalValue(int id,double time) {
-			return false;
-		}
-		public void setAnalogValue(int id, double time , double value) {
-		}
-		public void setDigitalValue(int id, double time , bool value) {
-		}
-	}
-
-	// NIDaqの通信箇所
-	public class NIDaqCommunicator {
-		public DebugWindow debugWindow=null;
-		private NIDaqSequence seq;
-		private int maxAnalogInput;
-		private int maxAnalogOutput;
-		private int maxDigitalInput;
-		private int maxDigitalOutput;
-		private double frequency;
-		private volatile bool runningFlag;
-		NationalInstruments.DAQmx.Task task = new NationalInstruments.DAQmx.Task("communicator");
-
-		public NIDaqCommunicator(NIDaqSequence _seq) {
-			seq = _seq;
-			maxAnalogInput = 10;
-			maxAnalogOutput = 10;
-			maxDigitalInput = 10;
-			maxDigitalOutput = 10;
-			frequency = 1e6;
-			runningFlag = false;
-		}
-
-		public void changeFrequence(int freq) {
-			frequency = freq;
-		}
-
-		public void BufferDone(object sender, NationalInstruments.DAQmx.TaskDoneEventArgs arg) {
-		}
-
-		public void Run() {
-			runningFlag = true;
-			long loopCount;
-			Stopwatch sw = new Stopwatch();
-			double fps = 1.0 / frequency;
-			double currentTime,nextTime,difTime,worstDifTime;
-			double analogValue;
-			bool digitalValue;
-
-			task.Done += new NationalInstruments.DAQmx.TaskDoneEventHandler(this.BufferDone);
-
-			nextTime = 0;
-			difTime = 0;
-			loopCount = 0;
-			worstDifTime = 0;
-			sw.Start();
-			while (runningFlag) {
-				currentTime = (double)sw.ElapsedTicks / Stopwatch.Frequency;
-				if (currentTime < nextTime) {
-					continue;
-				} else {
-					difTime += Math.Abs(nextTime - currentTime);
-					if (Math.Abs(nextTime - currentTime) > worstDifTime) {
-						worstDifTime = Math.Abs(nextTime - currentTime);
-					}
-					nextTime += fps;
-					loopCount++;
-				}
-
-				for (int i = 0; i < maxAnalogOutput; i++) {
-					analogValue = seq.getAnalogValue(i,currentTime);
-					// to daq
-				}
-				for (int i = 0; i < maxDigitalOutput; i++) {
-					digitalValue = seq.getDigitalValue(i,currentTime);
-					// to daq
-				}
-				for (int i = 0; i < maxAnalogInput; i++) {
-					// from daq
-					analogValue = 0;
-					seq.setAnalogValue(i, currentTime,analogValue);
-				}
-				for (int i = 0; i < maxDigitalInput; i++) {
-					// from daq
-					digitalValue = false;
-					seq.setDigitalValue(i, currentTime, digitalValue);
-				}
-			}
-			sw.Stop();
-
-			if (debugWindow != null) {
-				debugWindow.WriteLineAsyc(String.Format("Communicator thread stops"));
-				debugWindow.WriteLineAsyc(String.Format("*** Running Result ***"));
-				debugWindow.WriteLineAsyc(String.Format(" Highresolution timer = {0}", Stopwatch.IsHighResolution));
-				debugWindow.WriteLineAsyc(String.Format(" Running Time = {0} sec", sw.ElapsedMilliseconds*1e-3));
-				debugWindow.WriteLineAsyc(String.Format(" I/O Ideal Update Count = {0}", sw.ElapsedMilliseconds * 1e-3 * frequency));
-				debugWindow.WriteLineAsyc(String.Format(" I/O Update Count = {0}", loopCount));
-				debugWindow.WriteLineAsyc(String.Format(" Ideal Update Frequency = {0} Hz", frequency));
-				debugWindow.WriteLineAsyc(String.Format(" Update Frequency = {0} Hz", (double)1e3*loopCount / sw.ElapsedMilliseconds));
-				debugWindow.WriteLineAsyc(String.Format(" I/O Average Precision = {0} sec", difTime / loopCount));
-				debugWindow.WriteLineAsyc(String.Format(" I/O Worst Precision = {0} sec", worstDifTime));
-				debugWindow.WriteLineAsyc(String.Format("***"));
-			}
-		}
-		public void Stop() {
-			runningFlag = false;
+			seq.currentSequence.repaint();
 		}
 	}
 }
