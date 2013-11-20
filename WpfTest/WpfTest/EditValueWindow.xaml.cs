@@ -19,7 +19,7 @@ namespace WpfTest {
 	public partial class EditValueWindow : Window {
 		public EditValueWindow() {
 			InitializeComponent();
-			NodeType.Items.Add()
+//			NodeType.Items.Add()
 		}
 	}
 }
