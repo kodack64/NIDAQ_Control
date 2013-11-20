@@ -1,5 +1,6 @@
 *.dll
 *.obj
+*.suo
 obj/
 bin/
 
