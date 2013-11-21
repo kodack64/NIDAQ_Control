@@ -12,10 +12,6 @@
     </Window.CommandBindings>
 
     <shell:WindowChrome.WindowChrome>
-<!--        <shell:WindowChrome 
-            CaptionHeight="{x:Static SystemParameters.CaptionHeight}"
-            ResizeBorderThickness="{x:Static SystemParameters.WindowResizeBorderThickness}" 
-            GlassFrameThickness="0" /> -->
         <shell:WindowChrome 
             CaptionHeight="0"
             ResizeBorderThickness="{x:Static SystemParameters.WindowResizeBorderThickness}" 
@@ -25,7 +21,6 @@
     <Border BorderBrush="Black" BorderThickness="4">
         <Grid ShowGridLines="True">
             <Grid.RowDefinitions>
-                <!--                <RowDefinition Height="{x:Static SystemParameters.CaptionHeight}"/> -->
                 <RowDefinition Height="30"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
@@ -73,8 +68,6 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
-
-<!--                    <Label Name="Label_SequenceTitle" Content="Sequence" Grid.Row="0" Grid.Column="0" /> -->
                 </Grid>
             </ScrollViewer>
         </Grid>

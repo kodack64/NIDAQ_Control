@@ -84,15 +84,31 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Channel.cs" />
+    <Compile Include="Division.cs" />
+    <Compile Include="EditDivisionWindow.xaml.cs">
+      <DependentUpon>EditDivisionWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="EditIOWindow.xaml.cs">
+      <DependentUpon>EditIOWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="EditValueWindow.xaml.cs">
       <DependentUpon>EditValueWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Plot.cs" />
     <Compile Include="Sequence.cs" />
     <Page Include="CaptionFontResource.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="DebugWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="EditDivisionWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="EditIOWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -143,6 +159,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NIDAQInterface\NIDAQInterface.csproj">
+      <Project>{e9e59f58-f2b7-43be-a80c-30135fed1240}</Project>
+      <Name>NIDAQInterface</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

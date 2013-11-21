@@ -17,9 +17,41 @@ namespace WpfTest {
 	/// EditValue.xaml の相互作用ロジック
 	/// </summary>
 	public partial class EditValueWindow : Window {
-		public EditValueWindow() {
+		public double resultValue=0;
+		public NIDaq.PlotType resultType=NIDaq.PlotType.Hold;
+		public bool isOk=false;
+
+		public EditValueWindow(double currentValue,NIDaq.PlotType currentType) {
 			InitializeComponent();
-//			NodeType.Items.Add()
+			VoltageValue.Text = currentValue.ToString();
+			foreach(string typeName in Enum.GetNames(typeof(NIDaq.PlotType))){
+				NodeType.Items.Add(typeName);
+				if (typeName == currentType.ToString()) {
+					NodeType.SelectedItem = typeName;
+				}
+			}
+		}
+
+		private void Click_OK(object sender, RoutedEventArgs e) {
+			this.Close();
+			isOk = true;
+			resultValue = double.Parse(VoltageValue.Text);
+			foreach (string typeName in Enum.GetNames(typeof(NIDaq.PlotType))) {
+				if (typeName == NodeType.Text) {
+					resultType = (NIDaq.PlotType)(Enum.Parse(typeof(NIDaq.PlotType), typeName));
+				}
+			}
+		}
+
+		private void Click_Cancel(object sender, RoutedEventArgs e) {
+			isOk = false;
+		}
+
+		private void TextBox_TextChanged(object sender, TextChangedEventArgs e) {
+			double temp;
+			if (Button_OK != null && VoltageValue != null) {
+				Button_OK.IsEnabled = double.TryParse(VoltageValue.Text, out temp);
+			}
 		}
 	}
 }

@@ -38,7 +38,8 @@ namespace WpfTest{
 			private Grid bindedGrid;
 			public Sequence() {
 				DivisionLabel lastDivision = new DivisionLabel(this);
-				lastDivision.label.Content = "Last";
+				lastDivision.label.Text = "Last";
+				lastDivision.time = 0;
 				divisionLabels.Add(lastDivision);
 			}
 			public int getChannelCount(){
@@ -50,8 +51,8 @@ namespace WpfTest{
 			public bool getIsAnalog(int index) {
 				return channels[index].isAnalog;
 			}
-			public bool getIsInput(int index) {
-				return channels[index].isInput;	
+			public bool getIsOutput(int index) {
+				return channels[index].isOutput;	
 			}
 			public void insertDivision(int index) {
 				divisionLabels.Insert(index, new DivisionLabel(this));
@@ -151,7 +152,7 @@ namespace WpfTest{
 					bindedGrid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(80) });
 				}
 
-				Label label = new Label() { Content = "Sequence", Background = Brushes.Gray, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+				Label label = new Label() { Content = "Sequence", HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
 				label.SetValue(Grid.RowProperty, 0);
 				label.SetValue(Grid.ColumnProperty, 0);
 				bindedGrid.Children.Add(label);
