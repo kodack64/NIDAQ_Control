@@ -28,7 +28,9 @@ namespace WpfTest {
 			private int currentTargetColumn;
 			private int myRow;
 
-			protected List<Plot> plots = new List<Plot>();
+			public List<Plot> plots = new List<Plot>();
+			private List<double[]> samples = new List<double[]>();
+
 			public Channel(Sequence _parent,int divisionCount) {
 				parent = _parent;
 				isAnalog = true;
@@ -45,6 +47,7 @@ namespace WpfTest {
 				channelCanvas.SetValue(Grid.ColumnSpanProperty, divisionCount);
 				channelCanvas.ContextMenuOpening += (object sender, ContextMenuEventArgs e)=>CheckContextMenuOfPlots();
 			}
+
 			public void CheckContextMenuOfLabel() {
 				channelLabel.ContextMenu.Items.Clear();
 				channelLabel.ContextMenu.Items.Add(new MenuItem() { Header = String.Format("{0} {1} - {2}",isAnalog?"Analog":"Digital",isOutput?"Output":"Input",bindedName==""?"None":bindedName) , IsEnabled=false});
@@ -179,44 +182,41 @@ namespace WpfTest {
 					plot.Width = 8;
 					plot.Height = 8;
 					channelCanvas.Children.Add(plot);
-					if (i+1 < plots.Count) {
-						if (plots[i].type != PlotType.Through) {
-							int next;
-
-							for (next = i+1; next<plots.Count; next++ ){
-								if (plots[next].type != PlotType.Through) {
-									break;
-								}
+					if (i+1 < plots.Count && plots[i].type!=PlotType.Through) {
+						int next;
+						for (next = i+1; next<plots.Count; next++ ){
+							if (plots[next].type != PlotType.Through) {
+								break;
 							}
-							if (next < plots.Count) {
-								if (plots[i].type == PlotType.Hold) {
-									Line line;
-									line = new Line();
-									line.Stroke = Brushes.Gray;
-									line.StrokeThickness = 2;
-									line.X1 = 80 * i;
-									line.X2 = 80 * next;
-									line.Y1 = -plots[i].value + 40;
-									line.Y2 = -plots[i].value + 40;
-									channelCanvas.Children.Add(line);
-									line = new Line();
-									line.Stroke = Brushes.Gray;
-									line.StrokeThickness = 2;
-									line.X1 = 80 * next;
-									line.X2 = 80 * next;
-									line.Y1 = -plots[i].value + 40;
-									line.Y2 = -plots[next].value + 40;
-									channelCanvas.Children.Add(line);
-								} else if (plots[i].type == PlotType.Linear) {
-									Line line = new Line();
-									line.Stroke = Brushes.Gray;
-									line.StrokeThickness = 2;
-									line.X1 = 80 * i;
-									line.X2 = 80 * next;
-									line.Y1 = -plots[i].value + 40;
-									line.Y2 = -plots[next].value + 40;
-									channelCanvas.Children.Add(line);
-								}
+						}
+						if (next < plots.Count) {
+							if (plots[i].type == PlotType.Hold) {
+								Line line;
+								line = new Line();
+								line.Stroke = Brushes.Gray;
+								line.StrokeThickness = 2;
+								line.X1 = 80 * i;
+								line.X2 = 80 * next;
+								line.Y1 = -plots[i].value + 40;
+								line.Y2 = -plots[i].value + 40;
+								channelCanvas.Children.Add(line);
+								line = new Line();
+								line.Stroke = Brushes.Gray;
+								line.StrokeThickness = 2;
+								line.X1 = 80 * next;
+								line.X2 = 80 * next;
+								line.Y1 = -plots[i].value + 40;
+								line.Y2 = -plots[next].value + 40;
+								channelCanvas.Children.Add(line);
+							} else if (plots[i].type == PlotType.Linear) {
+								Line line = new Line();
+								line.Stroke = Brushes.Gray;
+								line.StrokeThickness = 2;
+								line.X1 = 80 * i;
+								line.X2 = 80 * next;
+								line.Y1 = -plots[i].value + 40;
+								line.Y2 = -plots[next].value + 40;
+								channelCanvas.Children.Add(line);
 							}
 						}
 					}

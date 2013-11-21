@@ -10,9 +10,9 @@ namespace NIDAQ_Test {
 	class Program {
 		static void Main(string[] args) {
 			Program prog = new Program();
-			prog.Read();
+//			prog.Read();
 			prog.Write();
-			prog.Read2();
+//			prog.Read2();
 //			prog.Write2();
 			Console.ReadKey();
 		}
@@ -51,21 +51,45 @@ namespace NIDAQ_Test {
 			try {
 				string[] channelNameList = DaqSystem.Local.GetPhysicalChannels(PhysicalChannelTypes.AO, PhysicalChannelAccess.External);
 				if (channelNameList.Length > 0) {
-					Task task = new Task();
-					task.AOChannels.CreateVoltageChannel(channelNameList[0], "Voltage", 0, 10, AOVoltageUnits.Volts);
-					task.Timing.ConfigureSampleClock("", 100000, SampleClockActiveEdge.Rising, SampleQuantityMode.ContinuousSamples);
-					task.Control(TaskAction.Verify);
+					Task task1 = new Task();
+					task1.AOChannels.CreateVoltageChannel(channelNameList[0], "Voltage1", 0, 10, AOVoltageUnits.Volts);
+                    task1.AOChannels.CreateVoltageChannel(channelNameList[1], "Voltage2", 0, 10, AOVoltageUnits.Volts);
+                    task1.AOChannels.CreateVoltageChannel(channelNameList[2], "Voltage3", 0, 10, AOVoltageUnits.Volts);
+                    task1.Timing.ConfigureSampleClock("", 100, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples);
+                    task1.Control(TaskAction.Verify);
+                    Task task2 = new Task();
+                    task2.AOChannels.CreateVoltageChannel(channelNameList[0], "Voltage1", 0, 10, AOVoltageUnits.Volts);
+                    task2.AOChannels.CreateVoltageChannel(channelNameList[1], "Voltage2", 0, 10, AOVoltageUnits.Volts);
+                    task2.AOChannels.CreateVoltageChannel(channelNameList[2], "Voltage3", 0, 10, AOVoltageUnits.Volts);
+                    task2.Timing.ConfigureSampleClock("", 100, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples);
+                    task2.Control(TaskAction.Verify);
 
-					AnalogSingleChannelWriter aowriter = new AnalogSingleChannelWriter(task.Stream);
-//					AnalogWaveform<double> waveform = AnalogWaveform<double>.FromArray1D(datalist.ToArray());
-					AnalogWaveform<double> waveform = new AnalogWaveform<double>(0);
-					for (int i = 0; i < repeat; i++) {
-						waveform = AnalogWaveform<double>.FromArray1D(datalist.GetRange(0*sampleRate,sampleRate).ToArray());
-						aowriter.WriteWaveform(true, waveform);
-						Console.Out.WriteLine("Acquire " + i + "th try");
-					}
-					task.Control(TaskAction.Stop);
-				}
+                    AnalogMultiChannelWriter aowriter1 = new AnalogMultiChannelWriter(task1.Stream);
+                    AnalogMultiChannelWriter aowriter2 = new AnalogMultiChannelWriter(task2.Stream);
+
+                    double[,] wave = new double[3, 1000];
+                    for (int i = 0; i < 3; i++)
+                    {
+                        for (int j = 0; j < 1000; j++)
+                        {
+                            wave[i,j] = 0.001*(1000-j);
+                        }
+                    }
+
+                    Console.WriteLine("Task is ready");
+                    aowriter1.WriteMultiSample(false, wave);
+                    task1.Control(TaskAction.Start);
+                    Console.ReadKey();
+                    task1.Control(TaskAction.Stop);
+                    task1.Control(TaskAction.Unreserve);
+                    Console.WriteLine("Task1 is released");
+                    aowriter2.WriteMultiSample(false, wave);
+                    task1.Control(TaskAction.Start);
+                    Console.ReadKey();
+                    task1.Control(TaskAction.Stop);
+                    task1.Control(TaskAction.Unreserve);
+                    Console.ReadKey();
+                }
 			} catch (DaqException e) {
 				Console.Out.WriteLine(e.Message);
 			}

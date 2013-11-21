@@ -12,105 +12,63 @@ namespace WpfTest
     {
         public DebugWindow debugWindow = null;
         private NIDaq.Sequences seq;
-        private int maxAnalogInput;
-        private int maxAnalogOutput;
-        private int maxDigitalInput;
-        private int maxDigitalOutput;
-        private double frequency;
-        private volatile bool runningFlag;
+		private long sampleRate;
 
-        public NIDaqCommunicator(NIDaq.Sequences _seq)
-        {
+        public NIDaqCommunicator(NIDaq.Sequences _seq){
             seq = _seq;
-            maxAnalogInput = 10;
-            maxAnalogOutput = 10;
-            maxDigitalInput = 10;
-            maxDigitalOutput = 10;
-            frequency = 1e6;
-            runningFlag = false;
+            sampleRate = (long)2.5e6;
         }
-
-        public void changeFrequence(int freq)
-        {
-            frequency = freq;
+        public void setSampleRate(long _sampleRate){
+            sampleRate=_sampleRate;
         }
+        public void Run(){
+			NIDaq.Sequence current = seq.currentSequence;
+			NIDAQInterface.NIDaqInterface instance = NIDAQInterface.NIDaqInterface.GetInstance();
 
-        public void Run()
-        {
-            runningFlag = true;
-            long loopCount;
-            Stopwatch sw = new Stopwatch();
-            double fps = 1.0 / frequency;
-            double currentTime, nextTime, difTime, worstDifTime;
-            double analogValue;
-            bool digitalValue;
+			current.compile(sampleRate);
+			int aochan=0;
+			for(int ci=0;ci<current.getChannelCount();ci++){
+				if(current.getIsAnalog(ci) && current.getIsOutput(ci) && current.getIsBinded(ci)){
+					aochan++;
+				}
+			}
+			long sampleSum=0;
+			for (int di = 0; di + 1 < current.getDivisionCount(); di++) {
+				sampleSum += current.getDivisionSample(di, sampleRate);
+			}
 
-            nextTime = 0;
-            difTime = 0;
-            loopCount = 0;
-            worstDifTime = 0;
-            sw.Start();
-            while (runningFlag)
-            {
-                currentTime = (double)sw.ElapsedTicks / Stopwatch.Frequency;
-                if (currentTime < nextTime)
-                {
-                    continue;
-                }
-                else
-                {
-                    difTime += Math.Abs(nextTime - currentTime);
-                    if (Math.Abs(nextTime - currentTime) > worstDifTime)
-                    {
-                        worstDifTime = Math.Abs(nextTime - currentTime);
-                    }
-                    nextTime += fps;
-                    loopCount++;
-                }
+			string[] nameList = new string[aochan];
+			double[,] waveArray = new double[aochan, sampleSum];
 
-                for (int i = 0; i < maxAnalogOutput; i++)
-                {
-//                    analogValue = seq.getAnalogValue(i, currentTime);
-                    // to daq
-                }
-                for (int i = 0; i < maxDigitalOutput; i++)
-                {
-//                    digitalValue = seq.getDigitalValue(i, currentTime);
-                    // to daq
-                }
-                for (int i = 0; i < maxAnalogInput; i++)
-                {
-                    // from daq
-                    analogValue = 0;
-//                    seq.setAnalogValue(i, currentTime, analogValue);
-                }
-                for (int i = 0; i < maxDigitalInput; i++)
-                {
-                    // from daq
-                    digitalValue = false;
-//                    seq.setDigitalValue(i, currentTime, digitalValue);
-                }
-            }
-            sw.Stop();
 
-            if (debugWindow != null)
-            {
-                debugWindow.WriteLineAsyc(String.Format("Communicator thread stops"));
-                debugWindow.WriteLineAsyc(String.Format("*** Running Result ***"));
-                debugWindow.WriteLineAsyc(String.Format(" Highresolution timer = {0}", Stopwatch.IsHighResolution));
-                debugWindow.WriteLineAsyc(String.Format(" Running Time = {0} sec", sw.ElapsedMilliseconds * 1e-3));
-                debugWindow.WriteLineAsyc(String.Format(" I/O Ideal Update Count = {0}", sw.ElapsedMilliseconds * 1e-3 * frequency));
-                debugWindow.WriteLineAsyc(String.Format(" I/O Update Count = {0}", loopCount));
-                debugWindow.WriteLineAsyc(String.Format(" Ideal Update Frequency = {0} Hz", frequency));
-                debugWindow.WriteLineAsyc(String.Format(" Update Frequency = {0} Hz", (double)1e3 * loopCount / sw.ElapsedMilliseconds));
-                debugWindow.WriteLineAsyc(String.Format(" I/O Average Precision = {0} sec", difTime / loopCount));
-                debugWindow.WriteLineAsyc(String.Format(" I/O Worst Precision = {0} sec", worstDifTime));
-                debugWindow.WriteLineAsyc(String.Format("***"));
-            }
-        }
-        public void Stop()
-        {
-            runningFlag = false;
-        }
+			int aoCount;
+			long sampleCount=0;
+			for (int di = 0; di+1 < current.getDivisionCount(); di++) {
+				aoCount = 0;
+				for (int ci = 0; ci < current.getChannelCount(); ci++) {
+					if (current.getIsAnalog(ci) && current.getIsOutput(ci) && current.getIsBinded(ci)) {
+						nameList[ci] = current.getBindedName(ci);
+						double[] channelWave = current.getWave(ci, di);
+						for (int j = 0; j < channelWave.Length; j++) {
+							waveArray[aoCount, sampleCount] = channelWave[j];
+							sampleCount++;
+						}						
+						aoCount++;
+					}
+				}
+			}
+			try {
+				instance.popTask(sampleRate, nameList, waveArray);
+				instance.execute();
+			} catch (Exception e) {
+				debugWindow.WriteLine("********** DAQmxError **********");
+				debugWindow.WriteLine(e.Message);
+				debugWindow.WriteLine("********************************");
+			}
+		}
+        public void Stop(){
+			NIDAQInterface.NIDaqInterface instance = NIDAQInterface.NIDaqInterface.GetInstance();
+			instance.stop();
+		}
     }
 }

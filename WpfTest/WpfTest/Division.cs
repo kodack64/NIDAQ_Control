@@ -52,6 +52,13 @@ namespace WpfTest {
 				label.SetValue(Grid.RowProperty, 0);
 				label.SetValue(Grid.ColumnProperty, i + 1);
 			}
+			public double getTime() {
+				if (units == TimeUnit.s) return time;
+				else if (units == TimeUnit.ms) return time * 1e-3;
+				else if (units == TimeUnit.us) return time * 1e-6;
+				else if (units == TimeUnit.ns) return time * 1e-9;
+				else return time;
+			}
 		}
 	}
 }

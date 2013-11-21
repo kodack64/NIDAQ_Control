@@ -35,12 +35,63 @@ namespace WpfTest{
         public class Sequence{
             private List<Channel> channels = new List<Channel>();
 			private List<DivisionLabel> divisionLabels = new List<DivisionLabel>();
+
+			private List<List<double[]>> waves;
+
 			private Grid bindedGrid;
 			public Sequence() {
 				DivisionLabel lastDivision = new DivisionLabel(this);
 				lastDivision.label.Text = "Last";
 				lastDivision.time = 0;
 				divisionLabels.Add(lastDivision);
+				waves = new List<List<double[]>>();
+			}
+
+			public void compile(long sampleRate) {
+				waves.Clear();
+				for (int ci = 0; ci < channels.Count; ci++) {
+					List<double[]> channelWave = new List<double[]>();
+
+					Channel ch = channels[ci];
+					for (int di = 0; di+1 < divisionLabels.Count; di++) {
+						long sampleNum = this.getDivisionSample(di,sampleRate);
+						double[] wave = new double[sampleNum];
+						Plot plot = ch.plots[di];
+						Plot nextPlot = ch.plots[di+1];
+
+						if (plot.type == PlotType.Hold) {
+							for (int i = 0; i < sampleNum; i++) {
+								wave[i] = plot.value;
+							}
+						} else if (plot.type == PlotType.Linear) {
+							for (int i = 0; i < sampleNum; i++) {
+								wave[i] = plot.value + (nextPlot.value - plot.value)*i / sampleNum;
+							}
+						} else {
+							for(int i=0;i<sampleNum;i++){
+								wave[i] = plot.value;
+							}
+						}
+						channelWave.Add(wave);
+					}
+					waves.Add(channelWave);
+				}
+			}
+			public double[] getWave(int channelIndex,int divisionIndex) {
+				return waves[channelIndex][divisionIndex];
+			}
+			public long getDivisionSample(int divisionIndex,long sampleRate) {
+				return (long)(divisionLabels[divisionIndex].getTime()*sampleRate);
+			}
+			public string getBindedName(int channelIndex) {
+				return channels[channelIndex].bindedName;
+			}
+			public double getTotalTime() {
+				double sum = 0;
+				foreach (DivisionLabel div in divisionLabels) {
+					sum += div.getTime();
+				}
+				return sum;
 			}
 			public int getChannelCount(){
 				return channels.Count;
@@ -50,6 +101,9 @@ namespace WpfTest{
 			}
 			public bool getIsAnalog(int index) {
 				return channels[index].isAnalog;
+			}
+			public bool getIsBinded(int index) {
+				return channels[index].bindedName.Length > 0;
 			}
 			public bool getIsOutput(int index) {
 				return channels[index].isOutput;	
