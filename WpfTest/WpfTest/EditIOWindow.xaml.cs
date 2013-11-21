@@ -57,12 +57,13 @@ namespace WpfTest {
 		private void RadioChecked() {
 			bool isAnalog = Radio_Analog.IsChecked.Value;
 			bool isOutput = Radio_Output.IsChecked.Value;
+			NIDAQInterface.NIDaqInterface intance = new NIDAQInterface.GetInstance();
 			PortList.Items.Clear();
 			PortList.Items.Add(messageNotConnect);
-			if (isAnalog && isOutput) foreach (string str in NIDaqInterface.GetInstance().getAnalogOutputList()) PortList.Items.Add(str);
-			if (isAnalog && !isOutput) foreach (string str in NIDaqInterface.GetInstance().getAnalogInputList()) PortList.Items.Add(str);
-			if (!isAnalog && isOutput) foreach (string str in NIDaqInterface.GetInstance().getDigitalOutputList()) PortList.Items.Add(str);
-			if (!isAnalog && !isOutput) foreach (string str in NIDaqInterface.GetInstance().getDigitalInputList()) PortList.Items.Add(str);
+			if (isAnalog && isOutput) foreach (string str in instance.getAnalogOutputList()) PortList.Items.Add(str);
+			if (isAnalog && !isOutput) foreach (string str in instance.getAnalogInputList()) PortList.Items.Add(str);
+			if (!isAnalog && isOutput) foreach (string str in instance.getDigitalOutputList()) PortList.Items.Add(str);
+			if (!isAnalog && !isOutput) foreach (string str in instance.getDigitalInputList()) PortList.Items.Add(str);
 			PortList.SelectedIndex = 0;
 		}
 		private void Click_OK(object sender, RoutedEventArgs e) {
