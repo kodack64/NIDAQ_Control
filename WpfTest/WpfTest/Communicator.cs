@@ -10,7 +10,6 @@ namespace WpfTest
     // NIDaqの通信箇所
     public class NIDaqCommunicator
     {
-        public DebugWindow debugWindow = null;
         private NIDaq.Sequences seq;
 		private long sampleRate;
 
@@ -39,6 +38,7 @@ namespace WpfTest
 
 			string[] nameList = new string[aochan];
 			double[,] waveArray = new double[aochan, sampleSum];
+			double[,] minmaxVoltage = new double[aochan, 2];
 
 
 			int aoCount;
@@ -48,6 +48,8 @@ namespace WpfTest
 				for (int ci = 0; ci < current.getChannelCount(); ci++) {
 					if (current.getIsAnalog(ci) && current.getIsOutput(ci) && current.getIsBinded(ci)) {
 						nameList[ci] = current.getBindedName(ci);
+						minmaxVoltage[ci, 0] = current.getMinVoltage(ci);
+						minmaxVoltage[ci, 1] = current.getMaxVoltage(ci);
 						double[] channelWave = current.getWave(ci, di);
 						for (int j = 0; j < channelWave.Length; j++) {
 							waveArray[aoCount, sampleCount] = channelWave[j];
@@ -58,12 +60,12 @@ namespace WpfTest
 				}
 			}
 			try {
-				instance.popTask(sampleRate, nameList, waveArray);
+				instance.popTask(sampleRate, nameList, waveArray,minmaxVoltage);
 				instance.execute();
 			} catch (Exception e) {
-				debugWindow.WriteLine("********** DAQmxError **********");
-				debugWindow.WriteLine(e.Message);
-				debugWindow.WriteLine("********************************");
+				DebugWindow.WriteLine("********** DAQmxエラー **********");
+				DebugWindow.WriteLine(e.Message);
+				DebugWindow.WriteLine("*********************************");
 			}
 		}
         public void Stop(){

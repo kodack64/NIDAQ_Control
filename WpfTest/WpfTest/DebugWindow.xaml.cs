@@ -18,24 +18,32 @@ namespace WpfTest {
 	/// DebugWindow.xaml の相互作用ロジック
 	/// </summary>
 	public partial class DebugWindow : Window {
-		public DebugWindow() {
+		private static DebugWindow debugWindow = null;
+		private DebugWindow() {
 			InitializeComponent();
 		}
-		private void Write(string text) {
+		private static void checkInstance() { if (debugWindow == null) debugWindow = new DebugWindow(); debugWindow.Show(); }
+		public static void Write(string text) { checkInstance(); debugWindow._Write(text); }
+		public static void WriteLine(string text) { checkInstance(); debugWindow._WriteLine(text); }
+		public static void WriteLineAsync(string text) { checkInstance(); debugWindow._WriteLineAsync(text); }
+		public static void MyClose() { if (debugWindow != null) debugWindow._Close(); }
+
+		public void _Write(string text) {
 			DebugTextBox.AppendText(text);
 			DebugTextBox.ScrollToEnd();
 		}
-		public void WriteLine(string text) {
-			this.Write(text + "\n");
+		public void _WriteLine(string text) {
+			this._Write(text + "\n");
 		}
-		public void WriteLineAsyc(string text) {
+		public void _WriteLineAsync(string text) {
 			DebugTextBox.Dispatcher.InvokeAsync(
 				new Action(() => {
-					this.WriteLine(text);
+					this._WriteLine(text);
 				})
 			);
 		}
-		public void scroleToEnd() {
+		public void _Close() {
+			this.Close();
 		}
 	}
 }

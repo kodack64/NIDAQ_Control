@@ -13,7 +13,7 @@ namespace NIDAQInterface
 		Task task;
 
 		AnalogMultiChannelWriter aowriter;
-		public TaskPack(string[] _name,double[,] _wave,long sampleRate,TaskDoneEventHandler done) {
+		public TaskPack(string[] _name,double[,] _wave,long sampleRate,double[,] minmaxVoltage,TaskDoneEventHandler done) {
 			waveArray = _wave;
 			channelNameArray = _name;
 			task = new Task();
@@ -21,7 +21,7 @@ namespace NIDAQInterface
 			for (int i = 0; i < channelNameArray.Length; i++) {
 				string name = channelNameArray[i];
 				string vname = "Voltage" + i;
-				task.AOChannels.CreateVoltageChannel(name, vname, 0, 10, AOVoltageUnits.Volts);
+				task.AOChannels.CreateVoltageChannel(name, vname, minmaxVoltage[i,0], minmaxVoltage[i,1], AOVoltageUnits.Volts);
 			}
 
 			task.Timing.ConfigureSampleClock("", sampleRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, waveArray.GetLength(1));
@@ -73,10 +73,10 @@ namespace NIDAQInterface
 			return digitalOutputList;
 		}
 
-		public void popTask(long sampleRate,string[] channelNameArray , double[,] waveArray){
+		public void popTask(long sampleRate,string[] channelNameArray , double[,] waveArray,double[,] minmaxVoltage){
 			try {
 				if (channelNameArray.Length != waveArray.GetLength(0) || channelNameArray.Length == 0) return;
-				TaskPack taskPack = new TaskPack(channelNameArray,waveArray,sampleRate,((s,e)=>doNextTask()));
+				TaskPack taskPack = new TaskPack(channelNameArray,waveArray,sampleRate,minmaxVoltage,((s,e)=>doNextTask()));
 				taskQueue.Enqueue(taskPack);
 			} catch (DaqException e) {
 				throw new Exception(e.Message) ;

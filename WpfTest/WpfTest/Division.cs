@@ -18,37 +18,45 @@ using System.Windows.Shapes;
 namespace WpfTest {
 	namespace NIDaq {
 		public class DivisionLabel {
+			public static readonly int width = 80;
+			private static int uniqueId = 0;
 			private Sequence parent;
 			public TextBox label;
 			public double time;
 			public TimeUnit units;
 			public string toText() { return ""; }
 			public void fromText(string s) { }
+			private int myColumn;
 			public DivisionLabel(Sequence _parent) {
 				parent = _parent;
-				label = new TextBox() { Text = "new div", Background = Brushes.LightGray , ContextMenu = new ContextMenu()};
+				label = new TextBox() { Text = "Div "+uniqueId, Background = Brushes.LightGray , ContextMenu = new ContextMenu()};
 				label.ContextMenuOpening += ((object sender, ContextMenuEventArgs arg) => CheckContextMenu());
 				time = 1;
 				units = TimeUnit.s;
+				uniqueId++;
 			}
 			public void CheckContextMenu() {
 				label.ContextMenu.Items.Clear();
 				label.ContextMenu.Items.Add(new MenuItem() { Header = String.Format("time = {0} {1}",time,units.ToString()), IsEnabled=false});
 				MenuItem item;
-				item = new MenuItem();
-				item.Header = "Edit";
+				item = new MenuItem() { Header = "Edit Division"};
 				item.Click += (object sender, RoutedEventArgs arg) => editDivision();
+				label.ContextMenu.Items.Add(item);
+				item = new MenuItem() { Header = "Remove This Division" };
+				item.Click += (object sender, RoutedEventArgs arg) => parent.removeDivision(myColumn);
 				label.ContextMenu.Items.Add(item);
 			}
 			public void editDivision() {
-				EditDivisionWindow window = new EditDivisionWindow(time,units);
+				EditDivisionWindow window = new EditDivisionWindow(time, units);
 				window.ShowDialog();
 				if (window.isOk) {
 					time = window.resultTimeValue;
 					units = window.resultTimeUnit;
 				}
+				DebugWindow.WriteLine("Divisionの情報を更新");
 			}
 			public void setPosition(int i) {
+				myColumn = i;
 				label.SetValue(Grid.RowProperty, 0);
 				label.SetValue(Grid.ColumnProperty, i + 1);
 			}
@@ -56,8 +64,10 @@ namespace WpfTest {
 				if (units == TimeUnit.s) return time;
 				else if (units == TimeUnit.ms) return time * 1e-3;
 				else if (units == TimeUnit.us) return time * 1e-6;
-				else if (units == TimeUnit.ns) return time * 1e-9;
 				else return time;
+			}
+			public string getName() {
+				return label.Text;
 			}
 		}
 	}

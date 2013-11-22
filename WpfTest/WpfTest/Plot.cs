@@ -36,8 +36,7 @@ namespace WpfTest {
 		public enum TimeUnit {
 			s,
 			ms,
-			us,
-			ns
+			us
 		}
 	}
 }

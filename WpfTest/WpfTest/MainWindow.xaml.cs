@@ -25,9 +25,6 @@ namespace WpfTest {
 	/// </summary>
 	public partial class MainWindow : Window {
 
-		// ログ表示用ウィンドウ
-		DebugWindow debugWindow;
-
 		// 入出力
 		NIDaqCommunicator communicator;
 
@@ -36,20 +33,17 @@ namespace WpfTest {
 		
 		// コンストラクタ
 		public MainWindow() {
+			DebugWindow.WriteLine("初期化");
 			InitializeComponent();
 
-			debugWindow = new DebugWindow();
-			debugWindow.Show();
-
 			//動作スレッドの初期化
+			DebugWindow.WriteLine("シーケンス作成");
 			seq = new NIDaq.Sequences();
 			seq.currentSequence.bindGridUI(SequenceGrid);
 			communicator = new NIDaqCommunicator(seq);
 
 			//ウィンドウをどこでもつかめるように
 			this.MouseLeftButtonDown += (sender, e) => this.DragMove();
-
-			repaint();
 		}
 
 		// 列挿入のコールバック
@@ -92,8 +86,9 @@ namespace WpfTest {
 		}
 		// 閉じる
 		private void Callback_WindowClose(object sender, RoutedEventArgs e) {
+			DebugWindow.WriteLine("終了");
 			communicator.Stop();
-			debugWindow.Close();
+			DebugWindow.MyClose();
 			this.Close();
 		}
 
@@ -106,23 +101,23 @@ namespace WpfTest {
 			if (element.IsChecked.HasValue && element.IsChecked.Value) {
 				//既にスレッドが起動中でなければスレッドを起動しボタンをトグル
 				communicator.Run();
-				communicator.debugWindow = debugWindow;
 				Button_Run.Content = "Stop Sequence";
-				debugWindow.WriteLine("Run communicator");
+				DebugWindow.WriteLine("シーケンス開始");
 			}
 			//停止の場合
 			else {
 				//スレッドを停止し応答があるまで待機
 				communicator.Stop();
-				debugWindow.WriteLine("Communicator is terminated");
 				Button_Run.Content = "Run Sequence";
+				DebugWindow.WriteLine("シーケンス中断");
 			}
-			debugWindow.scroleToEnd();
 		}
 
 		// シーケンスファイルのロード
 		private void Callback_LoadSequence(object sender, RoutedEventArgs e) {
-			OpenFileDialog dialog = new OpenFileDialog() {
+			DebugWindow.WriteLine("シーケンス読み込み");
+			OpenFileDialog dialog = new OpenFileDialog()
+			{
 				Multiselect=false,
 				Filter="seqファイル|*.seq"
 			};
@@ -130,14 +125,16 @@ namespace WpfTest {
 			if (result.HasValue) {
 				if(result.Value){
 					seq.currentSequence.fromText(File.ReadAllText(dialog.FileName));
-					debugWindow.WriteLine(String.Format("Open sequence file {0}",dialog.FileName));
+					DebugWindow.WriteLine(String.Format("Open sequence file {0}",dialog.FileName));
 				}
 			}
 		}
 
 		// シーケンスファイルのセーブ
 		private void Callback_SaveSequence(object sender, RoutedEventArgs e) {
-			SaveFileDialog dialog = new SaveFileDialog() {
+			DebugWindow.WriteLine("シーケンス書き出し");
+			SaveFileDialog dialog = new SaveFileDialog()
+			{
 				Filter="seqファイル|*.seq"
 			};
 			bool? result = dialog.ShowDialog();
@@ -145,7 +142,7 @@ namespace WpfTest {
 				if (result.Value) {
 					StreamWriter sw = File.CreateText(dialog.FileName);
 					sw.Write(seq.currentSequence.toText());
-					debugWindow.WriteLine(String.Format("Save sequence file {0}", dialog.FileName));
+					DebugWindow.WriteLine(String.Format("Save sequence file {0}", dialog.FileName));
 				}
 			}
 		}
