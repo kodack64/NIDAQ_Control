@@ -39,7 +39,7 @@ namespace WpfTest {
 			//動作スレッドの初期化
 			DebugWindow.WriteLine("シーケンス作成");
 			seq = new NIDaq.Sequences();
-			seq.currentSequence.bindGridUI(SequenceGrid);
+			seq.getCurrentSequence().bindGridUI(SequenceGrid);
 			communicator = new NIDaqCommunicator(seq);
 
 			//ウィンドウをどこでもつかめるように
@@ -48,22 +48,22 @@ namespace WpfTest {
 
 		// 列挿入のコールバック
 		private void Callback_InsertDivision(object sender, RoutedEventArgs e) {
-			seq.currentSequence.insertDivision(seq.currentSequence.getDivisionCount()-1);
+			seq.getCurrentSequence().insertDivision(seq.getCurrentSequence().getDivisionCount()-1);
 		}
 
 		// 行挿入のコールバック
 		private void Callback_InsertChannel(object sender, RoutedEventArgs e) {
-			seq.currentSequence.insertChannel(seq.currentSequence.getChannelCount());
+			seq.getCurrentSequence().insertChannel(seq.getCurrentSequence().getChannelCount());
 		}
 
 		// 列削除のコールバック
 		private void Callback_RemoveDivision(object sender, RoutedEventArgs e) {
-			seq.currentSequence.removeDivision(0);
+			seq.getCurrentSequence().removeDivision(0);
 		}
 
 		// 行削除のコールバック
 		private void Callback_RemoveChannel(object sender, RoutedEventArgs e) {
-			seq.currentSequence.removeChannel(0);
+			seq.getCurrentSequence().removeChannel(0);
 		}
 
 		// 最小化
@@ -124,8 +124,13 @@ namespace WpfTest {
 			bool? result = dialog.ShowDialog();
 			if (result.HasValue) {
 				if(result.Value){
-					seq.currentSequence.fromText(File.ReadAllText(dialog.FileName));
-					DebugWindow.WriteLine(String.Format("Open sequence file {0}",dialog.FileName));
+					try {
+						seq.loadCurrentSeq(File.ReadAllText(dialog.FileName));
+						DebugWindow.WriteLine(String.Format("Open sequence file {0}", dialog.FileName));
+						repaint();
+					} catch (Exception) {
+						DebugWindow.WriteLine(String.Format("Cannot open sequence file {0}", dialog.FileName));
+					}
 				}
 			}
 		}
@@ -140,8 +145,7 @@ namespace WpfTest {
 			bool? result = dialog.ShowDialog();
 			if (result.HasValue) {
 				if (result.Value) {
-					StreamWriter sw = File.CreateText(dialog.FileName);
-					sw.Write(seq.currentSequence.toText());
+					File.CreateText(dialog.FileName).Write(seq.writeCurrentSeq());
 					DebugWindow.WriteLine(String.Format("Save sequence file {0}", dialog.FileName));
 				}
 			}
@@ -149,7 +153,7 @@ namespace WpfTest {
 
 		// キャンバスの再描画
 		public void repaint() {
-			seq.currentSequence.repaint();
+			seq.getCurrentSequence().repaint();
 		}
 	}
 }

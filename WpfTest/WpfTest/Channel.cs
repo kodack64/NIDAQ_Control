@@ -18,6 +18,7 @@ namespace WpfTest {
 	namespace NIDaq {
 		//シーケンスのうち単一の入出力ライン
 		public class Channel {
+			private const string separator = ",";
 			public static readonly int height=80;
 			private static int uniqueId = 0;
 			public Sequence parent;
@@ -169,29 +170,36 @@ namespace WpfTest {
 				plots[index].type = type;
 			}
 
-			public string toText() {
-				string str;
-				str = String.Format("{0},{1},{2},{3}", isAnalog, isOutput, bindedName, plots.Count);
+			public string toSeq() {
+				string str="";
+				str += isAnalog.ToString() + separator;
+				str += isOutput.ToString() + separator;
+				str += bindedName + separator;
+				str += channelLabel.Text + separator;
+				str += myRow + separator;
+				str += minVoltage.ToString() + separator;
+				str += maxVoltage.ToString() + separator;
+				str += plots.Count + separator;
 				for (int i = 0; i < plots.Count; i++) {
-					str += "," + plots[i].toText();
+					str += plots[i].toSeq() + separator;
 				}
 				return str;
 			}
-			public void fromText(string str) {
-				try {
-					plots.Clear();
-					string[] strs = str.Split(',');
-					isAnalog = bool.Parse(strs[0]);
-					isOutput = bool.Parse(strs[1]);
-					bindedName = strs[2];
-					int plotCount = int.Parse(strs[3]);
-					for (int i = 0; i < plotCount; i++) {
-						Plot plot = new Plot();
-						plot.fromText(strs[4 + i]);
-						plots.Add(plot);
-					}
-				} catch (Exception) {
-					// load fail
+			public void fromSeq(string str) {
+				string[] strs = str.Trim().Split(separator.ToCharArray());
+				isAnalog = bool.Parse(strs[0]);
+				isOutput = bool.Parse(strs[1]);
+				bindedName = strs[2];
+				channelLabel.Text = strs[3];
+				myRow = int.Parse(strs[4]);
+				minVoltage = double.Parse(strs[5]);
+				maxVoltage = double.Parse(strs[6]);
+				int tempPlotsCount = int.Parse(strs[7]);
+				plots.Clear();
+				for (int i = 0; i < tempPlotsCount; i++) {
+					Plot plot = new Plot();
+					plot.fromSeq(strs[8 + i]);
+					plots.Add(plot);
 				}
 			}
 			public string getName() {

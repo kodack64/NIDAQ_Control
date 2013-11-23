@@ -7,25 +7,25 @@ using System.Threading.Tasks;
 namespace WpfTest {
 	namespace NIDaq {
 		public class Plot {
+			private string separator = ":";
 			public int index;
 			public double value;
 			public PlotType type;
 			public bool isEnd;
-			public string toText() {
-				string str;
-				str = String.Format("{0} {1} {2} {3}", index, value, Enum.GetName(typeof(PlotType), type), isEnd);
+			public string toSeq() {
+				string str="";
+				str += index + separator;
+				str += value + separator;
+				str += type.ToString() + separator;
+				str += isEnd+separator;
 				return str;
 			}
-			public void fromText(string str) {
-				try {
-					string[] strs = str.Split(' ');
-					index = int.Parse(strs[0]);
-					value = double.Parse(strs[1]);
-					type = (PlotType)Enum.Parse(typeof(PlotType), strs[2]);
-					isEnd = bool.Parse(strs[3]);
-				} catch (Exception) {
-					// load fail
-				}
+			public void fromSeq(string str) {
+				string[] strs = str.Trim().Split(separator.ToCharArray());
+				index = int.Parse(strs[0]);
+				value = double.Parse(strs[1]);
+				type = (PlotType)Enum.Parse(typeof(PlotType),strs[2]);
+				isEnd = bool.Parse(strs[3]);
 			}
 		}
 		public enum PlotType {

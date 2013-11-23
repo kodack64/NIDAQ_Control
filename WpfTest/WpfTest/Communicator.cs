@@ -21,7 +21,7 @@ namespace WpfTest
             sampleRate=_sampleRate;
         }
         public void Run(){
-			NIDaq.Sequence current = seq.currentSequence;
+			NIDaq.Sequence current = seq.getCurrentSequence();
 			NIDAQInterface.NIDaqInterface instance = NIDAQInterface.NIDaqInterface.GetInstance();
 
 			current.compile(sampleRate);

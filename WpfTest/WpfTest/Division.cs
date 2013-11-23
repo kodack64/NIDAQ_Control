@@ -18,15 +18,27 @@ using System.Windows.Shapes;
 namespace WpfTest {
 	namespace NIDaq {
 		public class DivisionLabel {
+			private const string separator = ",";
 			public static readonly int width = 80;
 			private static int uniqueId = 0;
 			private Sequence parent;
 			public TextBox label;
 			public double time;
 			public TimeUnit units;
-			public string toText() { return ""; }
-			public void fromText(string s) { }
 			private int myColumn;
+			public string toSeq() {
+				string str = "";
+				str += label.Text + separator;
+				str += time.ToString() + separator;
+				str += units.ToString() + separator;
+				return ""; 
+			}
+			public void fromSeq(string s) {
+				string[] strs = s.Trim().Split(separator.ToCharArray());
+				label.Text = strs[0];
+				time = double.Parse(strs[1]);
+				units = (TimeUnit)Enum.Parse(typeof(TimeUnit), strs[2]);
+			}
 			public DivisionLabel(Sequence _parent) {
 				parent = _parent;
 				label = new TextBox() { Text = "Div "+uniqueId, Background = Brushes.LightGray , ContextMenu = new ContextMenu()};

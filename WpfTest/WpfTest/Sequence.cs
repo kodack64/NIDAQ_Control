@@ -19,15 +19,31 @@ namespace WpfTest{
 
         //複数のシーケンス管理
         public class Sequences{
-            private List<Sequence> sequences = new List<Sequence>();
-			public Sequence currentSequence;
+			private List<Sequence> sequences = new List<Sequence>();
+			private int currentId;
 			public Sequences() {
 				sequences.Add(new Sequence());
-				currentSequence = sequences[0];
+				currentId = 0;
 			}
+			public Sequence getCurrentSequence() { return sequences[currentId]; }
 			public void changeActiveSequence(int index,Grid grid){
-				currentSequence=sequences[index];
-				currentSequence.bindGridUI(grid);
+				currentId = index;
+				sequences[currentId].bindGridUI(grid);
+			}
+			public string writeCurrentSeq() {
+				return sequences[currentId].toSeq();
+			}
+			public void loadCurrentSeq(string text) {
+				Sequence nseq = new Sequence();
+				try {
+					nseq.fromSeq(text);
+					sequences[currentId] = nseq;
+				} catch (Exception e) {
+					throw e;
+				}
+			}
+			public void createNewSequence() {
+				sequences.Add(new Sequence());
 			}
         }
 
@@ -200,45 +216,43 @@ namespace WpfTest{
 				channels[index + 1].setPosition(index + 1);
 				repaint();
 			}
-			public string toText() {
+
+			private const string separator = "\n";
+			public string toSeq() {
 				string str="";
+				str += divisionLabels.Count + separator;
 				for (int i = 0; i < divisionLabels.Count; i++) {
-					str += divisionLabels[i].toText() + ",";
+					str += divisionLabels[i].toSeq() + separator;
 				}
-				str += "\n";
+				str += channels.Count+separator;
 				for (int i = 0; i < channels.Count; i++) {
-					str += channels[i].toText()+"\n";
+					str += channels[i].toSeq() + separator;
 				}
 				return str;
 			}
-			public void fromText(string str) {
-				try{
-					List<DivisionLabel> tempDivisionLabels = new List<DivisionLabel>();
-					List<Channel> tempChannels = new List<Channel>();
+			public void fromSeq(string str) {
+				int tempDivisionCount;
+				int tempChannelCount;
+				int lineCount=0;
+				string[] strs = str.Split(separator.ToCharArray());
 
-					string[] strs = str.Split('\n');
-
-					string[] labelarray = strs[0].Split(',');
-					foreach (string s in labelarray) {
-						DivisionLabel label = new DivisionLabel(this);
-						label.fromText(s);
-						tempDivisionLabels.Add(label);
-					}
-		
-					for (int i = 1; i < strs.Length; i++) {
-						Channel ch = new Channel(this,tempDivisionLabels.Count);
-						ch.fromText(strs[i]);
-						tempChannels.Add(ch);
-					}
-
-					divisionLabels = tempDivisionLabels;
-					channels = tempChannels;
-
-				}catch(Exception e){
-					e.ToString();
-					//load fail
+				tempDivisionCount = int.Parse(strs[0].Trim()); lineCount++;
+				divisionLabels.Clear();
+				for (int divisionCount=0; lineCount+divisionCount < tempDivisionCount; divisionCount++) {
+					DivisionLabel label = new DivisionLabel(this);
+					label.fromSeq(strs[lineCount+divisionCount]);
+					divisionLabels.Add(label);
 				}
-				repaint();
+				lineCount += tempDivisionCount;
+
+				tempChannelCount = int.Parse(strs[0].Trim()); lineCount++;
+				channels.Clear();
+				for (int channelCount = 0; lineCount+channelCount < tempDivisionCount; channelCount++) {
+					Channel ch = new Channel(this,tempDivisionCount);
+					ch.fromSeq(strs[lineCount + channelCount]);
+					channels.Add(ch);
+				}
+				lineCount += tempChannelCount;
 			}
 			public void bindGridUI(Grid grid) {
 				DebugWindow.WriteLine("シーケンスとUIを同期");
