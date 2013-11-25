@@ -36,7 +36,7 @@ namespace NIDAQInterface
 		public void stop() {
 			task.Control(TaskAction.Stop);
 			task.Control(TaskAction.Unreserve);
-			task.Dispose();
+//			task.Dispose();
 		}
 	}
 	
@@ -100,7 +100,7 @@ namespace NIDAQInterface
 		public void doNextTask() {
 			if (taskQueue.Count > 0) {
 				taskQueue.Peek().stop();
-				taskQueue.Dequeue();
+//				taskQueue.Dequeue();
 			}
 			if (isRunning) {
 				if (taskQueue.Count == 0) {
