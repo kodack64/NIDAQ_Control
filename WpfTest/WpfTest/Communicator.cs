@@ -41,12 +41,12 @@ namespace WpfTest
 			double[,] minmaxVoltage = new double[aochan, 2];
 
 
-			int aoCount;
+			int aoCount=0;
 			long sampleCount=0;
-			for (int di = 0; di+1 < current.getDivisionCount(); di++) {
-				aoCount = 0;
-				for (int ci = 0; ci < current.getChannelCount(); ci++) {
-					if (current.getIsAnalog(ci) && current.getIsOutput(ci) && current.getIsBinded(ci)) {
+			for (int ci = 0; ci < current.getChannelCount(); ci++) {
+				if (current.getIsAnalog(ci) && current.getIsOutput(ci) && current.getIsBinded(ci)) {
+					sampleCount = 0;
+					for (int di = 0; di + 1 < current.getDivisionCount(); di++) {
 						nameList[ci] = current.getBindedName(ci);
 						minmaxVoltage[ci, 0] = current.getMinVoltage(ci);
 						minmaxVoltage[ci, 1] = current.getMaxVoltage(ci);
@@ -55,8 +55,8 @@ namespace WpfTest
 							waveArray[aoCount, sampleCount] = channelWave[j];
 							sampleCount++;
 						}						
-						aoCount++;
 					}
+					aoCount++;
 				}
 			}
 			try {
