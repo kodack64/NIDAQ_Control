@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Express 2012 for Windows Desktop
+# Visual Studio Express 2013 for Windows Desktop
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfTest", "WpfTest\WpfTest.csproj", "{2AD7838A-0C8B-4F70-8302-4590728C8523}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NIDAQInterface", "NIDAQInterface\NIDAQInterface.csproj", "{E9E59F58-F2B7-43BE-A80C-30135FED1240}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NIDAQ_Control_Host", "NIDAQ_Control_Host\NIDAQ_Control_Host.csproj", "{2E7243EF-562B-4FD6-B8D8-4005E0B9D433}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +31,12 @@ Global
 		{E9E59F58-F2B7-43BE-A80C-30135FED1240}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E9E59F58-F2B7-43BE-A80C-30135FED1240}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E9E59F58-F2B7-43BE-A80C-30135FED1240}.Release|x86.ActiveCfg = Release|Any CPU
+		{2E7243EF-562B-4FD6-B8D8-4005E0B9D433}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E7243EF-562B-4FD6-B8D8-4005E0B9D433}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E7243EF-562B-4FD6-B8D8-4005E0B9D433}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2E7243EF-562B-4FD6-B8D8-4005E0B9D433}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E7243EF-562B-4FD6-B8D8-4005E0B9D433}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E7243EF-562B-4FD6-B8D8-4005E0B9D433}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
