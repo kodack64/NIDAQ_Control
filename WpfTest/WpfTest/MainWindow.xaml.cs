@@ -40,6 +40,7 @@ namespace WpfTest {
 			DebugWindow.WriteLine("シーケンス作成");
 			seq = new NIDaq.Sequences();
 			seq.getCurrentSequence().bindGridUI(SequenceGrid);
+			seq.getCurrentSequence().addAllAnalogOutput();
 			communicator = new NIDaq.NIDaqCommunicator(seq);
 
 			//ウィンドウをどこでもつかめるように
@@ -96,6 +97,8 @@ namespace WpfTest {
 		private void Callback_SystemRun(object sender, RoutedEventArgs e) {
 
 			ToggleButton element = sender as ToggleButton;
+
+
 
 			//起動の場合
 			if (element.IsChecked.HasValue && element.IsChecked.Value) {

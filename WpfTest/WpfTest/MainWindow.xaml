@@ -53,20 +53,32 @@
             </StackPanel>
 
             <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Vertical" Margin="20" >
-                <ToggleButton Name="Button_Run"  Content="Run" Click="Callback_SystemRun" Margin="0,0,0,0"/>
-                <CheckBox Name="Check_Repeat_Run" IsChecked="false" Content="Repeat Run" Margin="0,20,0,0"/>
-                <StackPanel Orientation="Horizontal">
-                    <Label Content="Repeat time" Margin="0,20,0,0"/>
-                    <TextBox Name="Text_Repeat_Run" Width="100" Margin="0,20,0,0" IsEnabled="False" />
-                </StackPanel>
-                <Button Name="Button_LoadSequence"  Content="Load Sequence File" Click="Callback_LoadSequence" Margin="0,60,0,0"/>
-                <Button Name="Button_SaveSequence"  Content="Save Sequence File" Click="Callback_SaveSequence" Margin="0,20,0,0"/>
-                <Button Name="Button_AddSequenceRow"  Content="Add I/O Port" Click="Callback_InsertChannel" Margin="0,60,0,0" />
-                <Button Name="Button_AddSequenceColumn"  Content="Add Time Sequence" Click="Callback_InsertDivision" Margin="0,20,0,0"/>
+                <Border BorderThickness="1" Margin="0,20,0,0" Padding="4" BorderBrush="Black">
+                    <StackPanel>
+                        <ToggleButton Name="Button_Run"  Content="Run" Click="Callback_SystemRun" Margin="0,0,0,0"/>
+                        <CheckBox Name="Check_Repeat_Run" IsChecked="false" Content="Repeat Run" Margin="0,20,0,0"/>
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="Repeat time" Margin="0,20,0,0"/>
+                            <TextBox Name="Text_Repeat_Run" Width="100" Margin="0,20,0,0" IsEnabled="False" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+                <Border BorderThickness="1" Margin="0,20,0,0" Padding="4" BorderBrush="Black">
+                    <StackPanel>
+                        <Button Name="Button_LoadSequence"  Content="Load Sequence File" Click="Callback_LoadSequence" Margin="0,0,0,0"/>
+                        <Button Name="Button_SaveSequence"  Content="Save Sequence File" Click="Callback_SaveSequence" Margin="0,20,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border BorderThickness="1" Margin="0,20,0,0" Padding="4" BorderBrush="Black">
+                    <StackPanel>
+                        <Button Name="Button_AddSequenceRow"  Content="Add I/O Port" Click="Callback_InsertChannel" Margin="0,0,0,0" IsEnabled="false" />
+                        <Button Name="Button_AddSequenceColumn"  Content="Add Time Sequence" Click="Callback_InsertDivision" Margin="0,20,0,0"/>   
+                    </StackPanel>
+                </Border>
             </StackPanel>
 
             <ScrollViewer Grid.Row="1" Grid.Column="1" Margin="30" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="WhiteSmoke">
-                <Grid Name="SequenceGrid" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" ShowGridLines="True">
+                <Grid Name="SequenceGrid" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top">
                     <Grid.RowDefinitions>
                         <RowDefinition/>
                     </Grid.RowDefinitions>

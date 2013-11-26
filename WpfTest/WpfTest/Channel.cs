@@ -13,54 +13,112 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using NIDaqInterface;
 
 namespace WpfTest {
 	namespace NIDaq {
 		//シーケンスのうち単一の入出力ライン
 		public class Channel {
-			private const string separator = ",";
-			public static readonly int height=80;
+			//描画時の高さ
+			public static readonly int height=130;
+			//ユニークID
 			private static int uniqueId = 0;
+			//自身の所属
 			public Sequence parent;
-			public bool isAnalog { get; private set; }
-			public bool isOutput { get; private set; }
-			public string bindedName;
 
+			//チャンネル情報のパネル
+			public StackPanel stackPanelLabel;
+			public UIElement getPanel() { return stackPanelLabel; }
+			//チャンネルの行表示
+			private Label channelLabel;
+			public int getRow() { return int.Parse((string)channelLabel.Content); }
+			//チャンネルの名前
+			private TextBox channelName;
+			public string getName() { return channelName.Text; }
+			//チャンネルのデバイス
+			private ComboBox channelDevice;
+			public string getDevice() { return channelDevice.Text; }
+			public void setDevice(string str) { channelDevice.Text=str; }
+			//チャンネルのAD選択
+			private ComboBox ADCombo;
+			public bool isAnalog() { return ADCombo.SelectedIndex == 0; }
+			public void setIsAnalog(bool analog) { ADCombo.SelectedIndex = analog ? 0 : 1; }
+			//チャンネルのIO選択
+			private ComboBox IOCombo;
+			public bool isOutput() { return IOCombo.SelectedIndex == 0; }
+			public void setIsOutput(bool output) { IOCombo.SelectedIndex = output ? 0 : 1; }
+			//最小電圧
+			private TextBox minVoltage;
+			public double getMinVoltage() { return double.Parse(minVoltage.Text); }
+			//最大電圧
+			private TextBox maxVoltage;
+			public double getMaxVoltage() { return double.Parse(maxVoltage.Text); }
+
+			//チャンネルの時系列を表示するキャンバス
 			public Canvas channelCanvas;
-			public TextBox channelLabel;
-			private int currentTargetColumn;
-			private int myRow;
-			public double minVoltage;
-			public double maxVoltage;
 
+			//右クリック時選択中の列
+			private int currentTargetColumn;
+
+			//ノード
 			public List<Node> nodes = new List<Node>();
+			//コンパイル時の区間ごとの配列
 			private List<double[]> samples = new List<double[]>();
 
 			//コンストラクタ
-			public Channel(Sequence _parent,int divisionCount) {
+			public Channel(Sequence _parent, int divisionCount) {
 				parent = _parent;
-				isAnalog = true;
-				isOutput = true;
-				bindedName = "";
-				minVoltage = 0;
-				maxVoltage = 10;
+				stackPanelLabel = new StackPanel() { };
+
+				channelLabel = new Label() { Background=Brushes.Black , Foreground=Brushes.White };
+				channelName = new TextBox() { Text = "IO " + uniqueId, Background = Brushes.LightGray, ContextMenu = new ContextMenu() };
+//				channelLabel.ContextMenuOpening += (object sender, ContextMenuEventArgs arg) => CheckContextMenuOfLabel();
+				uniqueId++;
+				ADCombo = new ComboBox() { };
+				ADCombo.Items.Add("Ana"); ADCombo.Items.Add("Dig");
+				IOCombo = new ComboBox() { };
+				IOCombo.Items.Add("Out"); IOCombo.Items.Add("In");
+				channelDevice = new ComboBox() { };
+				foreach (string str in NIDaqTaskManager.GetInstance().getAnalogOutputList()) {
+					channelDevice.Items.Add(str);
+				}
+				minVoltage = new TextBox() { Text = "-1" };
+				maxVoltage = new TextBox() { Text = "1" };
+
+				stackPanelLabel.Children.Add(channelLabel);
+				stackPanelLabel.Children.Add(channelName);
+				{
+					StackPanel miniStack = new StackPanel() { Orientation = Orientation.Horizontal };
+					miniStack.Children.Add(ADCombo);
+					miniStack.Children.Add(IOCombo);
+					stackPanelLabel.Children.Add(miniStack);
+				}
+				stackPanelLabel.Children.Add(channelDevice);
+				{
+					StackPanel miniStack = new StackPanel() { Orientation = Orientation.Horizontal };
+					miniStack.Children.Add(minVoltage);
+					miniStack.Children.Add(new Label() { Content = "V - " });
+					miniStack.Children.Add(maxVoltage);
+					miniStack.Children.Add(new Label() { Content = "V" });
+					stackPanelLabel.Children.Add(miniStack);
+				}
+
 				for (int i = 0; i < divisionCount - 1; i++) {
 					nodes.Add(new Node() { index = 0, value = 0, type = NodeType.Hold, isEnd = false });
 				}
-				Border border = new Border();
+
 				nodes.Add(new Node() { index = 0, value = 0, type = NodeType.Hold, isEnd = true });
-				channelLabel = new TextBox() { Text="IO "+uniqueId,Background=Brushes.LightGray , ContextMenu = new ContextMenu()};
-				channelLabel.ContextMenuOpening += (object sender, ContextMenuEventArgs arg) => CheckContextMenuOfLabel();
-				channelCanvas = new Canvas() { Background = Brushes.White , ContextMenu = new ContextMenu()};
+
+				channelCanvas = new Canvas() { Background = Brushes.White, ContextMenu = new ContextMenu() };
 				channelCanvas.SetValue(Grid.ColumnSpanProperty, divisionCount);
-				channelCanvas.ContextMenuOpening += (object sender, ContextMenuEventArgs e)=>CheckContextMenuOfCanvas();
-				uniqueId++;
+				channelCanvas.ContextMenuOpening += (object sender, ContextMenuEventArgs e) => CheckContextMenuOfCanvas();
 			}
 			//チャンネルラベルのコンテキストメニュー表示
 			public void CheckContextMenuOfLabel() {
 				channelLabel.ContextMenu.Items.Clear();
-				channelLabel.ContextMenu.Items.Add(new MenuItem() { Header = String.Format("{0} {1} - {2}",isAnalog?"Analog":"Digital",isOutput?"Output":"Input",bindedName==""?"None":bindedName) , IsEnabled=false});
-				channelLabel.ContextMenu.Items.Add(new MenuItem() { Header = String.Format("Voltage {0}V-{1}V", minVoltage,maxVoltage), IsEnabled = false });
+				channelLabel.ContextMenu.Items.Add(new MenuItem() { Header = String.Format("{0} {1} - {2}",ADCombo.Text,IOCombo.Text,channelDevice.Text) , IsEnabled=false});
+				channelLabel.ContextMenu.Items.Add(new MenuItem() { Header = String.Format("Voltage {0}V-{1}V", minVoltage.Text,maxVoltage.Text), IsEnabled = false });
+				int myRow = int.Parse((string)channelLabel.Content);
 				MenuItem item;
 				item = new MenuItem() { Header="Edit Channel"};
 				item.Click += (object sender, RoutedEventArgs arg) => editChannel();
@@ -82,10 +140,11 @@ namespace WpfTest {
 			public void CheckContextMenuOfCanvas() {
 
 				Point p = Mouse.GetPosition(channelCanvas);
-				currentTargetColumn = (int)(p.X / height);
+				currentTargetColumn = (int)(p.X / Division.width);
 
 				int maxColumn = (int)channelCanvas.GetValue(Grid.ColumnSpanProperty);
 				bool isLast = (maxColumn - 1 == currentTargetColumn);
+				int myRow = int.Parse((string)channelLabel.Content);
 
 				channelCanvas.ContextMenu.Items.Clear();
 				MenuItem item;
@@ -141,23 +200,23 @@ namespace WpfTest {
 			}
 			//チャンネル情報の編集
 			public void editChannel() {
-				EditIOWindow window = new EditIOWindow(isAnalog,isOutput,bindedName,minVoltage,maxVoltage);
+				EditIOWindow window = new EditIOWindow(ADCombo.SelectedIndex==0,IOCombo.SelectedIndex==0,channelDevice.Text,double.Parse(minVoltage.Text),double.Parse(maxVoltage.Text));
 				window.ShowDialog();
 				if (window.isOk) {
-					isAnalog = window.resultIsAnalog;
-					isOutput = window.resultIsOutput;
-					bindedName = window.resultBindedName;
-					minVoltage = window.resultMinVoltage;
-					maxVoltage = window.resultMaxVoltage;
+					ADCombo.SelectedIndex = window.resultIsAnalog?0:1;
+					IOCombo.SelectedIndex = window.resultIsOutput?0:1;
+					channelDevice.Text = window.resultBindedName;
+					minVoltage.Text = window.resultMinVoltage.ToString();
+					maxVoltage.Text = window.resultMaxVoltage.ToString();
 				}
 				DebugWindow.WriteLine("チャンネルの情報を更新");
 				repaint();
 			}
 			//自身の行を変更
 			public void setPosition(int row) {
-				myRow = row;
-				channelLabel.SetValue(Grid.RowProperty, row + 1);
-				channelLabel.SetValue(Grid.ColumnProperty, 0);
+				channelLabel.Content = row.ToString();
+				stackPanelLabel.SetValue(Grid.RowProperty, row + 1);
+				stackPanelLabel.SetValue(Grid.ColumnProperty, 0);
 				channelCanvas.SetValue(Grid.RowProperty, row + 1);
 				channelCanvas.SetValue(Grid.ColumnProperty, 1);
 			}
@@ -174,16 +233,17 @@ namespace WpfTest {
 				nodes.RemoveAt(index);
 			}
 
+			private const string separator = ",";
 			//保存
 			public string toSeq() {
 				string str="";
-				str += isAnalog.ToString() + separator;
-				str += isOutput.ToString() + separator;
-				str += bindedName + separator;
-				str += channelLabel.Text + separator;
-				str += myRow + separator;
-				str += minVoltage.ToString() + separator;
-				str += maxVoltage.ToString() + separator;
+				str += ADCombo.SelectedIndex + separator;
+				str += IOCombo.SelectedIndex + separator;
+				str += channelDevice.Text + separator;
+				str += channelName.Text + separator;
+				str += channelLabel.Content + separator;
+				str += minVoltage.Text + separator;
+				str += maxVoltage.Text + separator;
 				str += nodes.Count + separator;
 				for (int i = 0; i < nodes.Count; i++) {
 					str += nodes[i].toSeq() + separator;
@@ -193,13 +253,13 @@ namespace WpfTest {
 			//書き出し
 			public void fromSeq(string str) {
 				string[] strs = str.Trim().Split(separator.ToCharArray());
-				isAnalog = bool.Parse(strs[0]);
-				isOutput = bool.Parse(strs[1]);
-				bindedName = strs[2];
-				channelLabel.Text = strs[3];
-				myRow = int.Parse(strs[4]);
-				minVoltage = double.Parse(strs[5]);
-				maxVoltage = double.Parse(strs[6]);
+				ADCombo.SelectedIndex = int.Parse(strs[0]);
+				IOCombo.SelectedIndex = int.Parse(strs[1]);
+				channelDevice.Text = strs[2];
+				channelName.Text = strs[3];
+				channelLabel.Content = strs[4];
+				minVoltage.Text = strs[5];
+				maxVoltage.Text = strs[6];
 				int tempPlotsCount = int.Parse(strs[7]);
 				nodes.Clear();
 				for (int i = 0; i < tempPlotsCount; i++) {
@@ -208,28 +268,45 @@ namespace WpfTest {
 					nodes.Add(Node);
 				}
 			}
-			//名前取得
-			public string getName() {
-				return channelLabel.Text;
-			}
 			//キャンバス中でのノードの高さを計算
-			private double canvasHeight(double voltage) {
-				return (1.0 - 1.0 * (voltage - minVoltage) / (maxVoltage - minVoltage)) * height;
+			private double canvasHeight(double voltage,double minVol,double maxVol) {
+				return (1.0 - 1.0 * (voltage - minVol) / (maxVol - minVol)) * height;
 			}
 			//再描画
 			public void repaint() {
 				channelCanvas.Children.Clear();
+				double minVol = double.Parse(minVoltage.Text);
+				double maxVol = double.Parse(maxVoltage.Text);
 				double circleSize = 4.0;
 				for (int i = 0; i < nodes.Count; i++) {
 					Ellipse Node = new Ellipse();
 					Node.Fill = Brushes.Black;
 					Node.StrokeThickness = 2;
-					Node.SetValue(Canvas.LeftProperty, height * i - circleSize);
-					Node.SetValue(Canvas.TopProperty, canvasHeight(nodes[i].value)-circleSize);
+					Node.SetValue(Canvas.LeftProperty, Division.width * i - circleSize);
+					Node.SetValue(Canvas.TopProperty, canvasHeight(nodes[i].value,minVol,maxVol)-circleSize);
 					Node.Width = 8;
 					Node.Height = 8;
 					channelCanvas.Children.Add(Node);
-					if (i+1 < nodes.Count && nodes[i].type!=NodeType.Through) {
+					
+					Line gridline;
+					gridline = new Line();
+					gridline.Stroke = Brushes.Black;
+					gridline.StrokeThickness = 2;
+					gridline.X1 = 0;
+					gridline.X2 = Division.width * nodes.Count;
+					gridline.Y1 = 0;
+					gridline.Y2 = 0;
+					channelCanvas.Children.Add(gridline);
+					gridline = new Line();
+					gridline.Stroke = Brushes.Black;
+					gridline.StrokeThickness = 2;
+					gridline.X1 = 0;
+					gridline.X2 = Division.width * nodes.Count;
+					gridline.Y1 = height;
+					gridline.Y2 = height;
+					channelCanvas.Children.Add(gridline);
+
+					if (i + 1 < nodes.Count && nodes[i].type != NodeType.Through) {
 						int next;
 						for (next = i+1; next<nodes.Count; next++ ){
 							if (nodes[next].type != NodeType.Through) {
@@ -240,29 +317,29 @@ namespace WpfTest {
 							if (nodes[i].type == NodeType.Hold) {
 								Line line;
 								line = new Line();
-								line.Stroke = Brushes.Gray;
+								line.Stroke = Brushes.LightGray;
 								line.StrokeThickness = 2;
 								line.X1 = Division.width * i;
 								line.X2 = Division.width * next;
-								line.Y1 = canvasHeight(nodes[i].value);
+								line.Y1 = canvasHeight(nodes[i].value,minVol,maxVol);
 								line.Y2 = line.Y1;
 								channelCanvas.Children.Add(line);
 								line = new Line();
-								line.Stroke = Brushes.Gray;
+								line.Stroke = Brushes.LightGray;
 								line.StrokeThickness = 2;
 								line.X1 = Division.width * next;
 								line.X2 = Division.width * next;
-								line.Y1 = canvasHeight(nodes[i].value);
-								line.Y2 = canvasHeight(nodes[next].value);
+								line.Y1 = canvasHeight(nodes[i].value, minVol, maxVol);
+								line.Y2 = canvasHeight(nodes[next].value, minVol, maxVol);
 								channelCanvas.Children.Add(line);
 							} else if (nodes[i].type == NodeType.Linear) {
 								Line line = new Line();
-								line.Stroke = Brushes.Gray;
+								line.Stroke = Brushes.LightGray;
 								line.StrokeThickness = 2;
 								line.X1 = Division.width * i;
 								line.X2 = Division.width * next;
-								line.Y1 = canvasHeight(nodes[i].value);
-								line.Y2 = canvasHeight(nodes[next].value);
+								line.Y1 = canvasHeight(nodes[i].value, minVol, maxVol);
+								line.Y2 = canvasHeight(nodes[next].value, minVol, maxVol);
 								channelCanvas.Children.Add(line);
 							}
 						}

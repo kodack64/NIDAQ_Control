@@ -13,12 +13,14 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using NIDaqInterface;
 
 namespace WpfTest{
     namespace NIDaq{
 
 		//単一のシーケンス
         public class Sequence{
+			private static int uniqueId=0;
 			//チャンネル
             private List<Channel> channels = new List<Channel>();
 			//区間
@@ -27,6 +29,11 @@ namespace WpfTest{
 			private List<List<double[]>> waves;
 			//描画先グリッド
 			private Grid bindedGrid;
+			//シーケンス名
+			private TextBox textSequenceName;
+			//サンプルレート
+			private TextBox textSampleRate;
+			public double getSampleRate() { return double.Parse(textSampleRate.Text); }
 
 
 			////////////////初期化
@@ -36,6 +43,17 @@ namespace WpfTest{
 				lastDivision.setLast();
 				divisions.Add(lastDivision);
 				waves = new List<List<double[]>>();
+				textSequenceName = new TextBox() { Text="Sequence"+uniqueId};
+				textSampleRate = new TextBox() { Text="1000"};
+				uniqueId++;
+			}
+			public void addAllAnalogOutput(){
+				foreach(string str in NIDaqTaskManager.GetInstance().getAnalogOutputList()){
+					insertChannel(channels.Count);
+					setBindedName(channels.Count - 1,str);
+					channels[channels.Count - 1].setIsAnalog(true);
+					channels[channels.Count - 1].setIsOutput(true);
+				}
 			}
 
 			////////////////波形成性
@@ -74,6 +92,7 @@ namespace WpfTest{
 				DebugWindow.WriteLine(" サンプルレート	:" + sampleRate);
 				DebugWindow.WriteLine(" シーケンス時間	:" + getSequenceTime());
 				DebugWindow.WriteLine(" サンプル数	:" + getSequenceSampleCount(sampleRate));
+				DebugWindow.WriteLine(" 通信量	:" + getSequenceSampleCount(sampleRate)*sizeof(double)*getEnabledChannelCount()*1e-6+"MByte");
 			}
 			//前回生成した波形を取得
 			public double[] getWave(int channelIndex,int divisionIndex) {
@@ -93,10 +112,6 @@ namespace WpfTest{
 					sum += getDivisionSampleCount(i, sampleRate);
 				}
 				return sum;
-			}
-			//チャンネルの担当デバイスを取得
-			public string getBindedName(int channelIndex) {
-				return channels[channelIndex].bindedName;
 			}
 			//divisionの時間を取得
 			public double getDivisionTime(int index) {
@@ -118,11 +133,19 @@ namespace WpfTest{
 			public int getEnabledChannelCount() {
 				int count = 0;
 				for(int i=0;i<channels.Count;i++){
-					if (channels[i].isAnalog && channels[i].isOutput && channels[i].bindedName.Length > 0) {
+					if (channels[i].isAnalog() && channels[i].isOutput() && channels[i].getDevice().Length > 0) {
 						count++;
 					}
 				}
 				return count;
+			}
+			//チャンネルの担当デバイスを取得
+			public string getBindedName(int channelIndex) {
+				return channels[channelIndex].getDevice();
+			}
+			//チャンネルの担当デバイスを指定
+			private void setBindedName(int channelIndex,string deviceName) {
+				channels[channelIndex].setDevice(deviceName);
 			}
 			//divisionの数の取得
 			public int getDivisionCount() {
@@ -130,23 +153,23 @@ namespace WpfTest{
 			}
 			//指定インデックスのチャンネルがアナログがどうか
 			public bool getIsAnalog(int index) {
-				return channels[index].isAnalog;
+				return channels[index].isAnalog();
 			}
 			//指定インデックスのチャンネルがデバイスに接続されているか
 			public bool getIsBinded(int index) {
-				return channels[index].bindedName.Length > 0;
+				return channels[index].getDevice().Length > 0;
 			}
 			//指定インデックスのチャンネルが出力化どうか
 			public bool getIsOutput(int index) {
-				return channels[index].isOutput;	
+				return channels[index].isOutput();	
 			}
 			//指定インデックスの最大電圧を取得
 			public double getMaxVoltage(int index) {
-				return channels[index].maxVoltage;
+				return channels[index].getMaxVoltage();
 			}
 			//指定インデックスの最小電圧を取得
 			public double getMinVoltage(int index) {
-				return channels[index].minVoltage;
+				return channels[index].getMinVoltage();
 			}
 			//チャンネル名を取得
 			public string getChannelName(int index) {
@@ -197,14 +220,14 @@ namespace WpfTest{
 				for (int i = index; i < channels.Count; i++) {
 					channels[i].setPosition(i);
 				}
-				bindedGrid.Children.Add(channels[index].channelLabel);
+				bindedGrid.Children.Add(channels[index].getPanel());
 				bindedGrid.Children.Add(channels[index].channelCanvas);
 				repaint();
 			}
 			//チャンネルを削除
 			public void removeChannel(int index) {
 				DebugWindow.WriteLine(String.Format("{0}列目を削除", index));
-				bindedGrid.Children.Remove(channels[index].channelLabel);
+				bindedGrid.Children.Remove(channels[index].getPanel());
 				bindedGrid.Children.Remove(channels[index].channelCanvas);
 				channels.RemoveAt(index);
 				for (int i = index; i < channels.Count; i++) {
@@ -290,10 +313,16 @@ namespace WpfTest{
 					bindedGrid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(Channel.height) });
 				}
 
-				TextBox textBox = new TextBox() {Text = "Sequence",TextWrapping=TextWrapping.Wrap , AcceptsReturn=true};
-				textBox.SetValue(Grid.RowProperty, 0);
-				textBox.SetValue(Grid.ColumnProperty, 0);
-				bindedGrid.Children.Add(textBox);
+				{
+					StackPanel miniStack = new StackPanel();
+					miniStack.SetValue(Grid.RowProperty, 0);
+					miniStack.SetValue(Grid.ColumnProperty, 0);
+					miniStack.Children.Add(new Label() { Content="Name"});
+					miniStack.Children.Add(textSequenceName);
+					miniStack.Children.Add(new Label() { Content = "SampleRate" });
+					miniStack.Children.Add(textSampleRate);
+					bindedGrid.Children.Add(miniStack);
+				}
 
 				for (int i = 0; i < divisions.Count; i++) {
 					divisions[i].setPosition(i);
