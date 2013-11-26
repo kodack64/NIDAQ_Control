@@ -17,52 +17,30 @@ using System.Windows.Shapes;
 namespace WpfTest{
     namespace NIDaq{
 
-        //複数のシーケンス管理
-        public class Sequences{
-			private List<Sequence> sequences = new List<Sequence>();
-			private int currentId;
-			public Sequences() {
-				sequences.Add(new Sequence());
-				currentId = 0;
-			}
-			public Sequence getCurrentSequence() { return sequences[currentId]; }
-			public void changeActiveSequence(int index,Grid grid){
-				currentId = index;
-				sequences[currentId].bindGridUI(grid);
-			}
-			public string writeCurrentSeq() {
-				return sequences[currentId].toSeq();
-			}
-			public void loadCurrentSeq(string text) {
-				Sequence nseq = new Sequence();
-				try {
-					nseq.fromSeq(text);
-					sequences[currentId] = nseq;
-				} catch (Exception e) {
-					throw e;
-				}
-			}
-			public void createNewSequence() {
-				sequences.Add(new Sequence());
-			}
-        }
-
 		//単一のシーケンス
         public class Sequence{
+			//チャンネル
             private List<Channel> channels = new List<Channel>();
-			private List<DivisionLabel> divisionLabels = new List<DivisionLabel>();
-
+			//区間
+			private List<Division> divisions = new List<Division>();
+			//波形
 			private List<List<double[]>> waves;
-
+			//描画先グリッド
 			private Grid bindedGrid;
+
+
+			////////////////初期化
+			//コンストラクタ
 			public Sequence() {
-				DivisionLabel lastDivision = new DivisionLabel(this);
+				Division lastDivision = new Division(this);
 				lastDivision.label.Text = "Last";
 				lastDivision.time = 0;
-				divisionLabels.Add(lastDivision);
+				divisions.Add(lastDivision);
 				waves = new List<List<double[]>>();
 			}
 
+			////////////////波形成性
+			//現在のシーケンスから波形を生成
 			public void compile(long sampleRate) {
 				DebugWindow.Write("シーケンスから信号を作成...");
 				waves.Clear();
@@ -70,23 +48,23 @@ namespace WpfTest{
 					List<double[]> channelWave = new List<double[]>();
 
 					Channel ch = channels[ci];
-					for (int di = 0; di+1 < divisionLabels.Count; di++) {
-						long sampleNum = this.getDivisionSample(di,sampleRate);
+					for (int di = 0; di+1 < divisions.Count; di++) {
+						long sampleNum = this.getDivisionSampleCount(di,sampleRate);
 						double[] wave = new double[sampleNum];
-						Plot plot = ch.plots[di];
-						Plot nextPlot = ch.plots[di+1];
+						Node Node = ch.nodes[di];
+						Node nextPlot = ch.nodes[di+1];
 
-						if (plot.type == PlotType.Hold) {
+						if (Node.type == NodeType.Hold) {
 							for (int i = 0; i < sampleNum; i++) {
-								wave[i] = plot.value;
+								wave[i] = Node.value;
 							}
-						} else if (plot.type == PlotType.Linear) {
+						} else if (Node.type == NodeType.Linear) {
 							for (int i = 0; i < sampleNum; i++) {
-								wave[i] = plot.value + (nextPlot.value - plot.value)*i / sampleNum;
+								wave[i] = Node.value + (nextPlot.value - Node.value)*i / sampleNum;
 							}
 						} else {
 							for(int i=0;i<sampleNum;i++){
-								wave[i] = plot.value;
+								wave[i] = Node.value;
 							}
 						}
 						channelWave.Add(wave);
@@ -95,90 +73,127 @@ namespace WpfTest{
 				}
 				DebugWindow.WriteLine("OK");
 				DebugWindow.WriteLine(" サンプルレート	:" + sampleRate);
-				DebugWindow.WriteLine(" シーケンス時間	:" + getTotalTime());
-				DebugWindow.WriteLine(" サンプル数	:" + getTotalDivisionSample(sampleRate));
+				DebugWindow.WriteLine(" シーケンス時間	:" + getSequenceTime());
+				DebugWindow.WriteLine(" サンプル数	:" + getSequenceSampleCount(sampleRate));
 			}
+			//前回生成した波形を取得
 			public double[] getWave(int channelIndex,int divisionIndex) {
 				return waves[channelIndex][divisionIndex];
 			}
-			public long getDivisionSample(int divisionIndex,long sampleRate) {
-				return (long)(divisionLabels[divisionIndex].getTime()*sampleRate);
+
+
+			////////////////情報取得
+			//divisionごとのサンプル数を取得
+			public long getDivisionSampleCount(int divisionIndex,long sampleRate) {
+				return (long)(divisions[divisionIndex].getTime()*sampleRate);
 			}
-			public long getTotalDivisionSample(long sampleRate) {
+			//シーケンス全体のサンプル数を取得
+			public long getSequenceSampleCount(long sampleRate) {
 				long sum = 0;
-				for (int i = 0; i < divisionLabels.Count; i++) {
-					sum += getDivisionSample(i, sampleRate);
+				for (int i = 0; i < divisions.Count; i++) {
+					sum += getDivisionSampleCount(i, sampleRate);
 				}
 				return sum;
 			}
+			//チャンネルの担当デバイスを取得
 			public string getBindedName(int channelIndex) {
 				return channels[channelIndex].bindedName;
 			}
-			public double getTotalTime() {
+			//divisionの時間を取得
+			public double getDivisionTime(int index) {
+				return divisions[index].getTime();
+			}
+			//シーケンス全体の時間を取得
+			public double getSequenceTime() {
 				double sum = 0;
-				foreach (DivisionLabel div in divisionLabels) {
+				foreach (Division div in divisions) {
 					sum += div.getTime();
 				}
 				return sum;
 			}
+			//チャンネル数の取得
 			public int getChannelCount(){
 				return channels.Count;
 			}
-			public int getDivisionCount() {
-				return divisionLabels.Count;
+			//有効なチャンネル数を取得
+			public int getEnabledChannelCount() {
+				int count = 0;
+				for(int i=0;i<channels.Count;i++){
+					if (channels[i].isAnalog && channels[i].isOutput && channels[i].bindedName.Length > 0) {
+						count++;
+					}
+				}
+				return count;
 			}
+			//divisionの数の取得
+			public int getDivisionCount() {
+				return divisions.Count;
+			}
+			//指定インデックスのチャンネルがアナログがどうか
 			public bool getIsAnalog(int index) {
 				return channels[index].isAnalog;
 			}
+			//指定インデックスのチャンネルがデバイスに接続されているか
 			public bool getIsBinded(int index) {
 				return channels[index].bindedName.Length > 0;
 			}
+			//指定インデックスのチャンネルが出力化どうか
 			public bool getIsOutput(int index) {
 				return channels[index].isOutput;	
 			}
+			//指定インデックスの最大電圧を取得
 			public double getMaxVoltage(int index) {
 				return channels[index].maxVoltage;
 			}
+			//指定インデックスの最小電圧を取得
 			public double getMinVoltage(int index) {
 				return channels[index].minVoltage;
 			}
+			//チャンネル名を取得
 			public string getChannelName(int index) {
 				return channels[index].getName();
 			}
+			//division名を取得
 			public string getDivisionName(int index) {
-				return divisionLabels[index].getName();
+				return divisions[index].getName();
 			}
+
+
+			////////////////UI操作
+			//divisionを挿入
 			public void insertDivision(int index) {
 				DebugWindow.WriteLine(String.Format("{0}行目に行を挿入",index));
-				divisionLabels.Insert(index, new DivisionLabel(this));
-				bindedGrid.ColumnDefinitions.Insert(index, new ColumnDefinition() { Width = new GridLength(DivisionLabel.width) });
+				divisions.Insert(index, new Division(this));
+				bindedGrid.ColumnDefinitions.Insert(index, new ColumnDefinition() { Width = new GridLength(Division.width) });
 				foreach (Channel ch in channels) {
-					ch.insertPlot(index,0);
-					ch.setSpan(divisionLabels.Count);
+					ch.insertNode(index,0);
+					ch.setSpan(divisions.Count);
 				}
-				for (int i = index; i < divisionLabels.Count; i++) {
-					divisionLabels[i].setPosition(i);
+				for (int i = index; i < divisions.Count; i++) {
+					divisions[i].setPosition(i);
 				}
-				bindedGrid.Children.Add(divisionLabels[index].label);
+				bindedGrid.Children.Add(divisions[index].label);
 				repaint();
 			}
+			//divisionを削除
 			public void removeDivision(int index) {
 				DebugWindow.WriteLine(String.Format("{0}行目を削除", index));
-				bindedGrid.Children.Remove(divisionLabels[index].label);
-				divisionLabels.RemoveAt(index);
+				bindedGrid.Children.Remove(divisions[index].label);
+				divisions.RemoveAt(index);
 				foreach(Channel ch in channels){
 					ch.removePlot(index);
-					ch.setSpan(divisionLabels.Count);
+					ch.setSpan(divisions.Count);
 				}
-				for (int i = index; i < divisionLabels.Count; i++) {
-					divisionLabels[i].setPosition(i);
+				for (int i = index; i < divisions.Count; i++) {
+					divisions[i].setPosition(i);
 				}
 				bindedGrid.ColumnDefinitions.RemoveAt(index);
 				repaint();
 			}
+			//チャンネルを挿入
 			public void insertChannel(int index) {
 				DebugWindow.WriteLine(String.Format("{0}列目に列を挿入", index));
-				channels.Insert(index, new Channel(this, divisionLabels.Count));
+				channels.Insert(index, new Channel(this, divisions.Count));
 				bindedGrid.RowDefinitions.Insert(index, new RowDefinition() { Height = new GridLength(Channel.height) });
 				for (int i = index; i < channels.Count; i++) {
 					channels[i].setPosition(i);
@@ -187,6 +202,7 @@ namespace WpfTest{
 				bindedGrid.Children.Add(channels[index].channelCanvas);
 				repaint();
 			}
+			//チャンネルを削除
 			public void removeChannel(int index) {
 				DebugWindow.WriteLine(String.Format("{0}列目を削除", index));
 				bindedGrid.Children.Remove(channels[index].channelLabel);
@@ -198,6 +214,7 @@ namespace WpfTest{
 				bindedGrid.RowDefinitions.RemoveAt(index);
 				repaint();
 			}
+			//チャンネルを上に移動
 			public void moveUp(int index) {
 				DebugWindow.WriteLine(String.Format("{0}列目を上に移動", index));
 				Channel ch = channels[index];
@@ -207,6 +224,7 @@ namespace WpfTest{
 				channels[index-1].setPosition(index-1);
 				repaint();
 			}
+			//チャンネルを下に移動
 			public void moveDown(int index) {
 				DebugWindow.WriteLine(String.Format("{0}列目を下に移動", index));
 				Channel ch = channels[index];
@@ -217,12 +235,14 @@ namespace WpfTest{
 				repaint();
 			}
 
+			////////////////ファイル入出力
 			private const string separator = "\n";
+			//保存
 			public string toSeq() {
 				string str="";
-				str += divisionLabels.Count + separator;
-				for (int i = 0; i < divisionLabels.Count; i++) {
-					str += divisionLabels[i].toSeq() + separator;
+				str += divisions.Count + separator;
+				for (int i = 0; i < divisions.Count; i++) {
+					str += divisions[i].toSeq() + separator;
 				}
 				str += channels.Count+separator;
 				for (int i = 0; i < channels.Count; i++) {
@@ -230,6 +250,7 @@ namespace WpfTest{
 				}
 				return str;
 			}
+			//読み込み
 			public void fromSeq(string str) {
 				int tempDivisionCount;
 				int tempChannelCount;
@@ -237,31 +258,34 @@ namespace WpfTest{
 				string[] strs = str.Split(separator.ToCharArray());
 
 				tempDivisionCount = int.Parse(strs[0].Trim()); lineCount++;
-				divisionLabels.Clear();
-				for (int divisionCount=0; lineCount+divisionCount < tempDivisionCount; divisionCount++) {
-					DivisionLabel label = new DivisionLabel(this);
+				divisions.Clear();
+				for (int divisionCount=0; divisionCount < tempDivisionCount; divisionCount++) {
+					Division label = new Division(this);
 					label.fromSeq(strs[lineCount+divisionCount]);
-					divisionLabels.Add(label);
+					divisions.Add(label);
 				}
 				lineCount += tempDivisionCount;
 
-				tempChannelCount = int.Parse(strs[0].Trim()); lineCount++;
+				tempChannelCount = int.Parse(strs[lineCount].Trim()); lineCount++;
 				channels.Clear();
-				for (int channelCount = 0; lineCount+channelCount < tempDivisionCount; channelCount++) {
+				for (int channelCount = 0; channelCount < tempChannelCount; channelCount++) {
 					Channel ch = new Channel(this,tempDivisionCount);
 					ch.fromSeq(strs[lineCount + channelCount]);
 					channels.Add(ch);
 				}
 				lineCount += tempChannelCount;
 			}
+
+			////////////////UI描画
+			//UIを更新
 			public void bindGridUI(Grid grid) {
 				DebugWindow.WriteLine("シーケンスとUIを同期");
 				bindedGrid = grid;
 				bindedGrid.Children.Clear();
 				bindedGrid.ColumnDefinitions.Clear();
 				bindedGrid.RowDefinitions.Clear();
-				for (int i = 0; i < divisionLabels.Count + 1; i++) {
-					bindedGrid.ColumnDefinitions.Add(new ColumnDefinition() { Width = new GridLength(DivisionLabel.width) });
+				for (int i = 0; i < divisions.Count + 1; i++) {
+					bindedGrid.ColumnDefinitions.Add(new ColumnDefinition() { Width = new GridLength(Division.width) });
 				}
 				for (int i = 0; i < channels.Count + 1; i++) {
 					bindedGrid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(Channel.height) });
@@ -272,25 +296,26 @@ namespace WpfTest{
 				label.SetValue(Grid.ColumnProperty, 0);
 				bindedGrid.Children.Add(label);
 
-				for (int i = 0; i < divisionLabels.Count; i++) {
-					divisionLabels[i].label.SetValue(Grid.RowProperty, 0);
-					divisionLabels[i].label.SetValue(Grid.ColumnProperty, i + 1);
-					bindedGrid.Children.Add(divisionLabels[i].label);
+				for (int i = 0; i < divisions.Count; i++) {
+					divisions[i].label.SetValue(Grid.RowProperty, 0);
+					divisions[i].label.SetValue(Grid.ColumnProperty, i + 1);
+					bindedGrid.Children.Add(divisions[i].label);
 				}
 				for (int i = 0; i < channels.Count; i++) {
 					channels[i].setPosition(i);
-					channels[i].setSpan(divisionLabels.Count);
+					channels[i].setSpan(divisions.Count);
 					bindedGrid.Children.Add(channels[i].channelCanvas);
 					bindedGrid.Children.Add(channels[i].channelCanvas);
 				}
 				repaint();
 			}
+			//再描画
 			public void repaint() {
 				DebugWindow.WriteLine("セルを再描画");
 				foreach (Channel ch in channels) {
 					ch.repaint();
 				}
 			}
-        }
+		}
     }
 }

@@ -18,13 +18,13 @@ namespace WpfTest {
 	/// </summary>
 	public partial class EditValueWindow : Window {
 		public double resultValue=0;
-		public NIDaq.PlotType resultType=NIDaq.PlotType.Hold;
+		public NIDaq.NodeType resultType=NIDaq.NodeType.Hold;
 		public bool isOk=false;
 
-		public EditValueWindow(double currentValue,NIDaq.PlotType currentType) {
+		public EditValueWindow(double currentValue,NIDaq.NodeType currentType) {
 			InitializeComponent();
 			VoltageValue.Text = currentValue.ToString();
-			foreach(string typeName in Enum.GetNames(typeof(NIDaq.PlotType))){
+			foreach(string typeName in Enum.GetNames(typeof(NIDaq.NodeType))){
 				NodeType.Items.Add(typeName);
 				if (typeName == currentType.ToString()) {
 					NodeType.SelectedItem = typeName;
@@ -36,9 +36,9 @@ namespace WpfTest {
 			this.Close();
 			isOk = true;
 			resultValue = double.Parse(VoltageValue.Text);
-			foreach (string typeName in Enum.GetNames(typeof(NIDaq.PlotType))) {
+			foreach (string typeName in Enum.GetNames(typeof(NIDaq.NodeType))) {
 				if (typeName == NodeType.Text) {
-					resultType = (NIDaq.PlotType)(Enum.Parse(typeof(NIDaq.PlotType), typeName));
+					resultType = (NIDaq.NodeType)(Enum.Parse(typeof(NIDaq.NodeType), typeName));
 				}
 			}
 		}

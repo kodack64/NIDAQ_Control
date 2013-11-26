@@ -11,7 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using NIDAQInterface;
+using NIDaqInterface;
 
 namespace WpfTest {
 	/// <summary>
@@ -64,7 +64,7 @@ namespace WpfTest {
 		private void RadioChecked() {
 			bool isAnalog = Radio_Analog.IsChecked.Value;
 			bool isOutput = Radio_Output.IsChecked.Value;
-			NIDAQInterface.NIDaqInterface instance = NIDAQInterface.NIDaqInterface.GetInstance();
+			NIDaqTaskManager instance = NIDaqTaskManager.GetInstance();
 			PortList.Items.Clear();
 			PortList.Items.Add(messageNotConnect);
 			if (isAnalog && isOutput) foreach (string str in instance.getAnalogOutputList()) PortList.Items.Add(str);

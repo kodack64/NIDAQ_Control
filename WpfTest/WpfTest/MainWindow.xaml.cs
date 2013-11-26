@@ -26,7 +26,7 @@ namespace WpfTest {
 	public partial class MainWindow : Window {
 
 		// 入出力
-		NIDaqCommunicator communicator;
+		NIDaq.NIDaqCommunicator communicator;
 
 		// シーケンス
 		NIDaq.Sequences seq;
@@ -40,7 +40,7 @@ namespace WpfTest {
 			DebugWindow.WriteLine("シーケンス作成");
 			seq = new NIDaq.Sequences();
 			seq.getCurrentSequence().bindGridUI(SequenceGrid);
-			communicator = new NIDaqCommunicator(seq);
+			communicator = new NIDaq.NIDaqCommunicator(seq);
 
 			//ウィンドウをどこでもつかめるように
 			this.MouseLeftButtonDown += (sender, e) => this.DragMove();
@@ -126,10 +126,11 @@ namespace WpfTest {
 				if(result.Value){
 					try {
 						seq.loadCurrentSeq(File.ReadAllText(dialog.FileName));
-						DebugWindow.WriteLine(String.Format("Open sequence file {0}", dialog.FileName));
+						seq.getCurrentSequence().bindGridUI(SequenceGrid);
+						DebugWindow.WriteLine(String.Format("{0}を読み込みました", dialog.FileName));
 						repaint();
-					} catch (Exception) {
-						DebugWindow.WriteLine(String.Format("Cannot open sequence file {0}", dialog.FileName));
+					} catch (Exception ex) {
+						DebugWindow.WriteLine(String.Format("{0}を開けませんでした\n*{1}:{2}", dialog.FileName,ex.StackTrace,ex.Message));
 					}
 				}
 			}
@@ -137,7 +138,7 @@ namespace WpfTest {
 
 		// シーケンスファイルのセーブ
 		private void Callback_SaveSequence(object sender, RoutedEventArgs e) {
-			DebugWindow.WriteLine("シーケンス書き出し");
+			DebugWindow.WriteLine("シーケンス保存");
 			SaveFileDialog dialog = new SaveFileDialog()
 			{
 				Filter="seqファイル|*.seq"
@@ -145,8 +146,10 @@ namespace WpfTest {
 			bool? result = dialog.ShowDialog();
 			if (result.HasValue) {
 				if (result.Value) {
-					File.CreateText(dialog.FileName).Write(seq.writeCurrentSeq());
-					DebugWindow.WriteLine(String.Format("Save sequence file {0}", dialog.FileName));
+					var sw = File.CreateText(dialog.FileName);
+					sw.Write(seq.writeCurrentSeq());
+					sw.Close();
+					DebugWindow.WriteLine(String.Format("{0}に保存しました。", dialog.FileName));
 				}
 			}
 		}

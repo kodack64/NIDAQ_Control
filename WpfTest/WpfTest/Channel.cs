@@ -33,9 +33,10 @@ namespace WpfTest {
 			public double minVoltage;
 			public double maxVoltage;
 
-			public List<Plot> plots = new List<Plot>();
+			public List<Node> nodes = new List<Node>();
 			private List<double[]> samples = new List<double[]>();
 
+			//コンストラクタ
 			public Channel(Sequence _parent,int divisionCount) {
 				parent = _parent;
 				isAnalog = true;
@@ -44,17 +45,18 @@ namespace WpfTest {
 				minVoltage = 0;
 				maxVoltage = 10;
 				for (int i = 0; i < divisionCount - 1; i++) {
-					plots.Add(new Plot() { index = 0, value = 0, type = PlotType.Hold, isEnd = false });
+					nodes.Add(new Node() { index = 0, value = 0, type = NodeType.Hold, isEnd = false });
 				}
 				Border border = new Border();
-				plots.Add(new Plot() { index = 0, value = 0, type = PlotType.Hold, isEnd = true });
+				nodes.Add(new Node() { index = 0, value = 0, type = NodeType.Hold, isEnd = true });
 				channelLabel = new TextBox() { Text="IO "+uniqueId,Background=Brushes.LightGray , ContextMenu = new ContextMenu()};
 				channelLabel.ContextMenuOpening += (object sender, ContextMenuEventArgs arg) => CheckContextMenuOfLabel();
 				channelCanvas = new Canvas() { Background = Brushes.White , ContextMenu = new ContextMenu()};
 				channelCanvas.SetValue(Grid.ColumnSpanProperty, divisionCount);
-				channelCanvas.ContextMenuOpening += (object sender, ContextMenuEventArgs e)=>CheckContextMenuOfPlots();
+				channelCanvas.ContextMenuOpening += (object sender, ContextMenuEventArgs e)=>CheckContextMenuOfCanvas();
 				uniqueId++;
 			}
+			//チャンネルラベルのコンテキストメニュー表示
 			public void CheckContextMenuOfLabel() {
 				channelLabel.ContextMenu.Items.Clear();
 				channelLabel.ContextMenu.Items.Add(new MenuItem() { Header = String.Format("{0} {1} - {2}",isAnalog?"Analog":"Digital",isOutput?"Output":"Input",bindedName==""?"None":bindedName) , IsEnabled=false});
@@ -75,8 +77,9 @@ namespace WpfTest {
 				item.Click += (object sender, RoutedEventArgs arg) => parent.removeChannel(myRow);
 				channelLabel.ContextMenu.Items.Add(item);
 			}
-			// キャンバス上でメニューがクリックされたらキャンバス上の情報に応じてコンテキストメニューを作成
-			public void CheckContextMenuOfPlots() {
+
+			//キャンバスのコンテキストメニュー表示
+			public void CheckContextMenuOfCanvas() {
 
 				Point p = Mouse.GetPosition(channelCanvas);
 				currentTargetColumn = (int)(p.X / height);
@@ -95,7 +98,7 @@ namespace WpfTest {
 
 				item = new MenuItem();
 				item.Header = "Edit Value";
-				item.Click += ((object s, RoutedEventArgs arg) => this.editValue(currentTargetColumn));
+				item.Click += ((object s, RoutedEventArgs arg) => this.editNode(currentTargetColumn));
 				channelCanvas.ContextMenu.Items.Add(item);
 
 				channelCanvas.ContextMenu.Items.Add(new Separator());
@@ -124,16 +127,19 @@ namespace WpfTest {
 				}
 				channelCanvas.ContextMenu.Items.Add(itemHead);
 			}
-			public void editValue(int targetColumn) {
-				EditValueWindow window = new EditValueWindow(plots[targetColumn].value,plots[targetColumn].type);
+
+			//ノードの編集
+			public void editNode(int targetColumn) {
+				EditValueWindow window = new EditValueWindow(nodes[targetColumn].value,nodes[targetColumn].type);
 				window.ShowDialog();
 				if (window.isOk) {
-					plots[targetColumn].type = window.resultType;
-					plots[targetColumn].value = window.resultValue;
+					nodes[targetColumn].type = window.resultType;
+					nodes[targetColumn].value = window.resultValue;
 				}
 				DebugWindow.WriteLine("セルの情報を更新");
 				repaint();
 			}
+			//チャンネル情報の編集
 			public void editChannel() {
 				EditIOWindow window = new EditIOWindow(isAnalog,isOutput,bindedName,minVoltage,maxVoltage);
 				window.ShowDialog();
@@ -147,6 +153,7 @@ namespace WpfTest {
 				DebugWindow.WriteLine("チャンネルの情報を更新");
 				repaint();
 			}
+			//自身の行を変更
 			public void setPosition(int row) {
 				myRow = row;
 				channelLabel.SetValue(Grid.RowProperty, row + 1);
@@ -154,22 +161,20 @@ namespace WpfTest {
 				channelCanvas.SetValue(Grid.RowProperty, row + 1);
 				channelCanvas.SetValue(Grid.ColumnProperty, 1);
 			}
+			//divisionの数を更新
 			public void setSpan(int span) {
 				channelCanvas.SetValue(Grid.ColumnSpanProperty, span);
 			}
-			public void insertPlot(int index, double value) {
-				plots.Insert(index, new Plot() { index = index, value = value, type = PlotType.Hold, isEnd = false });
+			//ノードを挿入
+			public void insertNode(int index, double value) {
+				nodes.Insert(index, new Node() { index = index, value = value, type = NodeType.Hold, isEnd = false });
 			}
+			//ノードを削除
 			public void removePlot(int index) {
-				plots.RemoveAt(index);
-			}
-			public void setPlotValue(int index, double value) {
-				plots[index].value = value;
-			}
-			public void setPlotType(int index, PlotType type) {
-				plots[index].type = type;
+				nodes.RemoveAt(index);
 			}
 
+			//保存
 			public string toSeq() {
 				string str="";
 				str += isAnalog.ToString() + separator;
@@ -179,12 +184,13 @@ namespace WpfTest {
 				str += myRow + separator;
 				str += minVoltage.ToString() + separator;
 				str += maxVoltage.ToString() + separator;
-				str += plots.Count + separator;
-				for (int i = 0; i < plots.Count; i++) {
-					str += plots[i].toSeq() + separator;
+				str += nodes.Count + separator;
+				for (int i = 0; i < nodes.Count; i++) {
+					str += nodes[i].toSeq() + separator;
 				}
 				return str;
 			}
+			//書き出し
 			public void fromSeq(string str) {
 				string[] strs = str.Trim().Split(separator.ToCharArray());
 				isAnalog = bool.Parse(strs[0]);
@@ -195,65 +201,68 @@ namespace WpfTest {
 				minVoltage = double.Parse(strs[5]);
 				maxVoltage = double.Parse(strs[6]);
 				int tempPlotsCount = int.Parse(strs[7]);
-				plots.Clear();
+				nodes.Clear();
 				for (int i = 0; i < tempPlotsCount; i++) {
-					Plot plot = new Plot();
-					plot.fromSeq(strs[8 + i]);
-					plots.Add(plot);
+					Node Node = new Node();
+					Node.fromSeq(strs[8 + i]);
+					nodes.Add(Node);
 				}
 			}
+			//名前取得
 			public string getName() {
 				return channelLabel.Text;
 			}
+			//キャンバス中でのノードの高さを計算
 			private double canvasHeight(double voltage) {
-				return (1.0 - 1.0 * (voltage-minVoltage) / (maxVoltage - minVoltage)) *height;
+				return (1.0 - 1.0 * (voltage - minVoltage) / (maxVoltage - minVoltage)) * height;
 			}
+			//再描画
 			public void repaint() {
 				channelCanvas.Children.Clear();
 				double circleSize = 4.0;
-				for (int i = 0; i < plots.Count; i++) {
-					Ellipse plot = new Ellipse();
-					plot.Fill = Brushes.Black;
-					plot.StrokeThickness = 2;
-					plot.SetValue(Canvas.LeftProperty, height * i - circleSize);
-					plot.SetValue(Canvas.TopProperty, canvasHeight(plots[i].value)-circleSize);
-					plot.Width = 8;
-					plot.Height = 8;
-					channelCanvas.Children.Add(plot);
-					if (i+1 < plots.Count && plots[i].type!=PlotType.Through) {
+				for (int i = 0; i < nodes.Count; i++) {
+					Ellipse Node = new Ellipse();
+					Node.Fill = Brushes.Black;
+					Node.StrokeThickness = 2;
+					Node.SetValue(Canvas.LeftProperty, height * i - circleSize);
+					Node.SetValue(Canvas.TopProperty, canvasHeight(nodes[i].value)-circleSize);
+					Node.Width = 8;
+					Node.Height = 8;
+					channelCanvas.Children.Add(Node);
+					if (i+1 < nodes.Count && nodes[i].type!=NodeType.Through) {
 						int next;
-						for (next = i+1; next<plots.Count; next++ ){
-							if (plots[next].type != PlotType.Through) {
+						for (next = i+1; next<nodes.Count; next++ ){
+							if (nodes[next].type != NodeType.Through) {
 								break;
 							}
 						}
-						if (next < plots.Count) {
-							if (plots[i].type == PlotType.Hold) {
+						if (next < nodes.Count) {
+							if (nodes[i].type == NodeType.Hold) {
 								Line line;
 								line = new Line();
 								line.Stroke = Brushes.Gray;
 								line.StrokeThickness = 2;
-								line.X1 = DivisionLabel.width * i;
-								line.X2 = DivisionLabel.width * next;
-								line.Y1 = canvasHeight(plots[i].value);
+								line.X1 = Division.width * i;
+								line.X2 = Division.width * next;
+								line.Y1 = canvasHeight(nodes[i].value);
 								line.Y2 = line.Y1;
 								channelCanvas.Children.Add(line);
 								line = new Line();
 								line.Stroke = Brushes.Gray;
 								line.StrokeThickness = 2;
-								line.X1 = DivisionLabel.width * next;
-								line.X2 = DivisionLabel.width * next;
-								line.Y1 = canvasHeight(plots[i].value);
-								line.Y2 = canvasHeight(plots[next].value);
+								line.X1 = Division.width * next;
+								line.X2 = Division.width * next;
+								line.Y1 = canvasHeight(nodes[i].value);
+								line.Y2 = canvasHeight(nodes[next].value);
 								channelCanvas.Children.Add(line);
-							} else if (plots[i].type == PlotType.Linear) {
+							} else if (nodes[i].type == NodeType.Linear) {
 								Line line = new Line();
 								line.Stroke = Brushes.Gray;
 								line.StrokeThickness = 2;
-								line.X1 = DivisionLabel.width * i;
-								line.X2 = DivisionLabel.width * next;
-								line.Y1 = canvasHeight(plots[i].value);
-								line.Y2 = canvasHeight(plots[next].value);
+								line.X1 = Division.width * i;
+								line.X2 = Division.width * next;
+								line.Y1 = canvasHeight(nodes[i].value);
+								line.Y2 = canvasHeight(nodes[next].value);
 								channelCanvas.Children.Add(line);
 							}
 						}

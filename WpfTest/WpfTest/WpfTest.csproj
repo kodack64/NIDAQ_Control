@@ -96,6 +96,7 @@
     </Compile>
     <Compile Include="Plot.cs" />
     <Compile Include="Sequence.cs" />
+    <Compile Include="Sequences.cs" />
     <Page Include="CaptionFontResource.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -161,9 +162,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NIDAQInterface\NIDAQInterface.csproj">
+    <ProjectReference Include="..\NIDAQInterface\NIDaqInterface.csproj">
       <Project>{e9e59f58-f2b7-43be-a80c-30135fed1240}</Project>
-      <Name>NIDAQInterface</Name>
+      <Name>NIDaqInterface</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
