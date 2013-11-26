@@ -94,9 +94,10 @@
     <Compile Include="EditValueWindow.xaml.cs">
       <DependentUpon>EditValueWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Plot.cs" />
+    <Compile Include="Node.cs" />
     <Compile Include="Sequence.cs" />
     <Compile Include="Sequences.cs" />
+    <Compile Include="TimeUnit.cs" />
     <Page Include="CaptionFontResource.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

@@ -42,11 +42,6 @@ namespace WpfTest {
 			Linear,
 			Through
 		}
-		//時間の種類
-		public enum TimeUnit {
-			s,
-			ms,
-			us
-		}
+
 	}
 }

@@ -33,8 +33,7 @@ namespace WpfTest{
 			//コンストラクタ
 			public Sequence() {
 				Division lastDivision = new Division(this);
-				lastDivision.label.Text = "Last";
-				lastDivision.time = 0;
+				lastDivision.setLast();
 				divisions.Add(lastDivision);
 				waves = new List<List<double[]>>();
 			}
@@ -172,13 +171,13 @@ namespace WpfTest{
 				for (int i = index; i < divisions.Count; i++) {
 					divisions[i].setPosition(i);
 				}
-				bindedGrid.Children.Add(divisions[index].label);
+				bindedGrid.Children.Add(divisions[index].getPanel());
 				repaint();
 			}
 			//divisionを削除
 			public void removeDivision(int index) {
 				DebugWindow.WriteLine(String.Format("{0}行目を削除", index));
-				bindedGrid.Children.Remove(divisions[index].label);
+				bindedGrid.Children.Remove(divisions[index].getPanel());
 				divisions.RemoveAt(index);
 				foreach(Channel ch in channels){
 					ch.removePlot(index);
@@ -291,20 +290,18 @@ namespace WpfTest{
 					bindedGrid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(Channel.height) });
 				}
 
-				Label label = new Label() { Content = "Sequence", HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-				label.SetValue(Grid.RowProperty, 0);
-				label.SetValue(Grid.ColumnProperty, 0);
-				bindedGrid.Children.Add(label);
+				TextBox textBox = new TextBox() { Text = "Sequence", HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+				textBox.SetValue(Grid.RowProperty, 0);
+				textBox.SetValue(Grid.ColumnProperty, 0);
+				bindedGrid.Children.Add(textBox);
 
 				for (int i = 0; i < divisions.Count; i++) {
-					divisions[i].label.SetValue(Grid.RowProperty, 0);
-					divisions[i].label.SetValue(Grid.ColumnProperty, i + 1);
-					bindedGrid.Children.Add(divisions[i].label);
+					divisions[i].setPosition(i);
+					bindedGrid.Children.Add(divisions[i].getPanel());
 				}
 				for (int i = 0; i < channels.Count; i++) {
 					channels[i].setPosition(i);
 					channels[i].setSpan(divisions.Count);
-					bindedGrid.Children.Add(channels[i].channelCanvas);
 					bindedGrid.Children.Add(channels[i].channelCanvas);
 				}
 				repaint();

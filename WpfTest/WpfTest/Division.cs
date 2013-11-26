@@ -26,20 +26,28 @@ namespace WpfTest {
 
 			//自身の属するシーケンス
 			private Sequence parent;
+
+			//自身のパネル
+			private StackPanel stackPanel;
+
 			//名前
-			public TextBox label;
+			private TextBox label;
+
 			//時間
-			public double time;
+			private double time;
 			//時間のユニット
-			public TimeUnit units;
+			private TimeUnit units;
+
 			//自身の列番号
 			private int myColumn;
 
 			//コンストラクタ
 			public Division(Sequence _parent) {
 				parent = _parent;
-				label = new TextBox() { Text = "Div " + uniqueId, Background = Brushes.LightGray, ContextMenu = new ContextMenu() };
+				label = new TextBox() { Text = "Div " + uniqueId, Background = Brushes.LightGray , ContextMenu=null};
 				label.ContextMenuOpening += ((object sender, ContextMenuEventArgs arg) => CheckContextMenu());
+				stackPanel = new StackPanel() { Orientation = Orientation.Vertical, ContextMenu = new ContextMenu() };
+				stackPanel.Children.Add(label);
 				time = 1;
 				units = TimeUnit.s;
 				uniqueId++;
@@ -63,15 +71,15 @@ namespace WpfTest {
 			}
 			//コンテキストメニューの作成
 			public void CheckContextMenu() {
-				label.ContextMenu.Items.Clear();
-				label.ContextMenu.Items.Add(new MenuItem() { Header = String.Format("time = {0} {1}",time,units.ToString()), IsEnabled=false});
+				stackPanel.ContextMenu.Items.Clear();
+				stackPanel.ContextMenu.Items.Add(new MenuItem() { Header = String.Format("time = {0} {1}", time, units.ToString()), IsEnabled = false });
 				MenuItem item;
 				item = new MenuItem() { Header = "Edit Division"};
 				item.Click += (object sender, RoutedEventArgs arg) => editDivision();
-				label.ContextMenu.Items.Add(item);
+				stackPanel.ContextMenu.Items.Add(item);
 				item = new MenuItem() { Header = "Remove This Division" };
 				item.Click += (object sender, RoutedEventArgs arg) => parent.removeDivision(myColumn);
-				label.ContextMenu.Items.Add(item);
+				stackPanel.ContextMenu.Items.Add(item);
 			}
 			//divisionの編集
 			public void editDivision() {
@@ -86,19 +94,29 @@ namespace WpfTest {
 			//列番号を移動
 			public void setPosition(int i) {
 				myColumn = i;
-				label.SetValue(Grid.RowProperty, 0);
-				label.SetValue(Grid.ColumnProperty, i + 1);
+				stackPanel.SetValue(Grid.RowProperty, 0);
+				stackPanel.SetValue(Grid.ColumnProperty, i + 1);
 			}
 			//時間を取得
 			public double getTime() {
-				if (units == TimeUnit.s) return time;
-				else if (units == TimeUnit.ms) return time * 1e-3;
-				else if (units == TimeUnit.us) return time * 1e-6;
-				else return time;
+				return time * units.getTime();
 			}
 			//名前を取得
 			public string getName() {
 				return label.Text;
+			}
+			//名前を設定
+			public void setName(string str) {
+				label.Text = str;
+			}
+			//パネルを取得
+			public UIElement getPanel(){
+				return stackPanel;
+			}
+			//最後に設定
+			public void setLast() {
+				label.Text = "Last";
+				time = 0;
 			}
 		}
 	}
