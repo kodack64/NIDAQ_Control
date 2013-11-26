@@ -290,7 +290,7 @@ namespace WpfTest{
 					bindedGrid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(Channel.height) });
 				}
 
-				TextBox textBox = new TextBox() { Text = "Sequence", HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+				TextBox textBox = new TextBox() {Text = "Sequence",TextWrapping=TextWrapping.Wrap , AcceptsReturn=true};
 				textBox.SetValue(Grid.RowProperty, 0);
 				textBox.SetValue(Grid.ColumnProperty, 0);
 				bindedGrid.Children.Add(textBox);

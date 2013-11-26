@@ -11,7 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using NIDaqInterface;
+using NIDaqInterfaceDummy;
 
 namespace WpfTest {
 	/// <summary>

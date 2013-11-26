@@ -163,6 +163,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\NIDaqInterfaceDummy\NIDaqInterfaceDummy.csproj">
+      <Project>{a87c54e7-143a-4162-94a3-82525da08d2d}</Project>
+      <Name>NIDaqInterfaceDummy</Name>
+    </ProjectReference>
     <ProjectReference Include="..\NIDAQInterface\NIDaqInterface.csproj">
       <Project>{e9e59f58-f2b7-43be-a80c-30135fed1240}</Project>
       <Name>NIDaqInterface</Name>
