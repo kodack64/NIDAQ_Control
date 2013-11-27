@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace NIDaqInterfaceDummy {
+namespace NIDaqInterfaceDummy{
 
 	public class NIDaqTaskManager{
 		private Queue <Thread> taskQueue = new Queue<Thread>();
@@ -54,7 +54,7 @@ namespace NIDaqInterfaceDummy {
 			}
 			doNextTask();
 		}
-		public void execute() {
+		public void start() {
 			if (!isRunning) {
 				if (taskQueue.Count > 0) {
 					isRunning = true;

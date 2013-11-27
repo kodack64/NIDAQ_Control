@@ -11,9 +11,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using NIDaqInterface;
 
-namespace WpfTest {
+namespace NIDaqController {
 	/// <summary>
 	/// EditIOWindow.xaml の相互作用ロジック
 	/// </summary>
@@ -64,7 +63,7 @@ namespace WpfTest {
 		private void RadioChecked() {
 			bool isAnalog = Radio_Analog.IsChecked.Value;
 			bool isOutput = Radio_Output.IsChecked.Value;
-			NIDaqTaskManager instance = NIDaqTaskManager.GetInstance();
+			TaskManager instance = TaskManager.GetInstance();
 			PortList.Items.Clear();
 			PortList.Items.Add(messageNotConnect);
 			if (isAnalog && isOutput) foreach (string str in instance.getAnalogOutputList()) PortList.Items.Add(str);

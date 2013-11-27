@@ -11,23 +11,24 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using NIDaqController;
 
-namespace WpfTest {
+namespace NIDaqController {
 	/// <summary>
 	/// EditValue.xaml の相互作用ロジック
 	/// </summary>
 	public partial class EditValueWindow : Window {
 		public double resultValue=0;
-		public NIDaq.NodeType resultType=NIDaq.NodeType.Hold;
+		public NodeType resultType = NodeType.Hold;
 		public bool isOk=false;
 
-		public EditValueWindow(double currentValue,NIDaq.NodeType currentType) {
+		public EditValueWindow(double currentValue,NodeType currentType) {
 			InitializeComponent();
 			VoltageValue.Text = currentValue.ToString();
-			foreach(string typeName in Enum.GetNames(typeof(NIDaq.NodeType))){
-				NodeType.Items.Add(typeName);
+			foreach(string typeName in Enum.GetNames(typeof(NodeType))){
+				Combo_NodeType.Items.Add(typeName);
 				if (typeName == currentType.ToString()) {
-					NodeType.SelectedItem = typeName;
+					Combo_NodeType.SelectedItem = typeName;
 				}
 			}
 		}
@@ -36,9 +37,9 @@ namespace WpfTest {
 			this.Close();
 			isOk = true;
 			resultValue = double.Parse(VoltageValue.Text);
-			foreach (string typeName in Enum.GetNames(typeof(NIDaq.NodeType))) {
-				if (typeName == NodeType.Text) {
-					resultType = (NIDaq.NodeType)(Enum.Parse(typeof(NIDaq.NodeType), typeName));
+			foreach (string typeName in Enum.GetNames(typeof(NodeType))) {
+				if (typeName == Combo_NodeType.Text) {
+					resultType = (NodeType)(Enum.Parse(typeof(NodeType), typeName));
 				}
 			}
 		}

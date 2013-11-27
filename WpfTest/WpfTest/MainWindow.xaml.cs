@@ -17,6 +17,7 @@ using System.Threading;
 using System.Diagnostics;
 using System.IO;
 using Microsoft.Win32;
+using NIDaqController;
 
 
 namespace WpfTest {
@@ -26,10 +27,10 @@ namespace WpfTest {
 	public partial class MainWindow : Window {
 
 		// 入出力
-		NIDaq.NIDaqCommunicator communicator;
+		NIDaqCommunicator communicator;
 
 		// シーケンス
-		NIDaq.Sequences seq;
+		Sequences seq;
 		
 		// コンストラクタ
 		public MainWindow() {
@@ -38,10 +39,10 @@ namespace WpfTest {
 
 			//動作スレッドの初期化
 			DebugWindow.WriteLine("シーケンス作成");
-			seq = new NIDaq.Sequences();
+			seq = new Sequences();
 			seq.getCurrentSequence().bindGridUI(SequenceGrid);
 			seq.getCurrentSequence().addAllAnalogOutput();
-			communicator = new NIDaq.NIDaqCommunicator(seq);
+			communicator = new NIDaqCommunicator(seq);
 
 			//ウィンドウをどこでもつかめるように
 			this.MouseLeftButtonDown += (sender, e) => this.DragMove();

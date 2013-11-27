@@ -83,38 +83,39 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Channel.cs" />
-    <Compile Include="Division.cs" />
-    <Compile Include="EditDivisionWindow.xaml.cs">
+    <Compile Include="Sequence\Channel.cs" />
+    <Compile Include="Sequence\Division.cs" />
+    <Compile Include="EditWindow\EditDivisionWindow.xaml.cs">
       <DependentUpon>EditDivisionWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="EditIOWindow.xaml.cs">
+    <Compile Include="EditWindow\EditIOWindow.xaml.cs">
       <DependentUpon>EditIOWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="EditValueWindow.xaml.cs">
+    <Compile Include="EditWindow\EditValueWindow.xaml.cs">
       <DependentUpon>EditValueWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Node.cs" />
-    <Compile Include="Sequence.cs" />
-    <Compile Include="Sequences.cs" />
-    <Compile Include="TimeUnit.cs" />
+    <Compile Include="Sequence\Node.cs" />
+    <Compile Include="Sequence\Sequence.cs" />
+    <Compile Include="Sequence\Sequences.cs" />
+    <Compile Include="Sequence\TimeUnit.cs" />
+    <Compile Include="TaskManager.cs" />
     <Page Include="CaptionFontResource.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="DebugWindow.xaml">
+    <Page Include="EditWindow\DebugWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="EditDivisionWindow.xaml">
+    <Page Include="EditWindow\EditDivisionWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="EditIOWindow.xaml">
+    <Page Include="EditWindow\EditIOWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="EditValueWindow.xaml">
+    <Page Include="EditWindow\EditValueWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -126,8 +127,8 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Communicator.cs" />
-    <Compile Include="DebugWindow.xaml.cs">
+    <Compile Include="Sequence\Communicator.cs" />
+    <Compile Include="EditWindow\DebugWindow.xaml.cs">
       <DependentUpon>DebugWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="MainWindow.xaml.cs">
