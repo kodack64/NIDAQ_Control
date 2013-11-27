@@ -9,7 +9,6 @@ namespace NIDaqInterfaceDummy{
 
 	public class NIDaqTaskManager{
 		private Queue <Thread> taskQueue = new Queue<Thread>();
-
 		private static NIDaqTaskManager myInstance;
 		bool isRunning;
 		public static NIDaqTaskManager GetInstance() {

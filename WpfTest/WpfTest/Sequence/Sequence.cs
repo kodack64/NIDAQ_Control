@@ -49,8 +49,8 @@ namespace NIDaqController{
 			foreach(string str in TaskManager.GetInstance().getAnalogOutputList()){
 				insertChannel(channels.Count);
 				setBindedName(channels.Count - 1,str);
-				channels[channels.Count - 1].setIsAnalog(true);
-				channels[channels.Count - 1].setIsOutput(true);
+				channels[channels.Count - 1].isAnalog=true;
+				channels[channels.Count - 1].isOutput=true;
 			}
 		}
 
@@ -131,7 +131,7 @@ namespace NIDaqController{
 		public int getEnabledChannelCount() {
 			int count = 0;
 			for(int i=0;i<channels.Count;i++){
-				if (channels[i].isAnalog() && channels[i].isOutput() && channels[i].getDevice().Length > 0) {
+				if (channels[i].isAnalog && channels[i].isOutput && channels[i].deviceName.Length > 0) {
 					count++;
 				}
 			}
@@ -139,11 +139,11 @@ namespace NIDaqController{
 		}
 		//チャンネルの担当デバイスを取得
 		public string getBindedName(int channelIndex) {
-			return channels[channelIndex].getDevice();
+			return channels[channelIndex].deviceName;
 		}
 		//チャンネルの担当デバイスを指定
 		private void setBindedName(int channelIndex,string deviceName) {
-			channels[channelIndex].setDevice(deviceName);
+			channels[channelIndex].deviceName=deviceName;
 		}
 		//divisionの数の取得
 		public int getDivisionCount() {
@@ -151,27 +151,27 @@ namespace NIDaqController{
 		}
 		//指定インデックスのチャンネルがアナログがどうか
 		public bool getIsAnalog(int index) {
-			return channels[index].isAnalog();
+			return channels[index].isAnalog;
 		}
 		//指定インデックスのチャンネルがデバイスに接続されているか
 		public bool getIsBinded(int index) {
-			return channels[index].getDevice().Length > 0;
+			return channels[index].deviceName.Length > 0;
 		}
 		//指定インデックスのチャンネルが出力化どうか
 		public bool getIsOutput(int index) {
-			return channels[index].isOutput();	
+			return channels[index].isOutput;
 		}
 		//指定インデックスの最大電圧を取得
 		public double getMaxVoltage(int index) {
-			return channels[index].getMaxVoltage();
+			return channels[index].maxVoltage;
 		}
 		//指定インデックスの最小電圧を取得
 		public double getMinVoltage(int index) {
-			return channels[index].getMinVoltage();
+			return channels[index].minVoltage;
 		}
 		//チャンネル名を取得
 		public string getChannelName(int index) {
-			return channels[index].getName();
+			return channels[index].name;
 		}
 		//division名を取得
 		public string getDivisionName(int index) {
@@ -187,7 +187,6 @@ namespace NIDaqController{
 			bindedGrid.ColumnDefinitions.Insert(index, new ColumnDefinition() { Width = new GridLength(Division.width) });
 			foreach (Channel ch in channels) {
 				ch.insertNode(index,0);
-				ch.setSpan(divisions.Count);
 			}
 			for (int i = index; i < divisions.Count; i++) {
 				divisions[i].setPosition(i);
@@ -202,7 +201,6 @@ namespace NIDaqController{
 			divisions.RemoveAt(index);
 			foreach(Channel ch in channels){
 				ch.removePlot(index);
-				ch.setSpan(divisions.Count);
 			}
 			for (int i = index; i < divisions.Count; i++) {
 				divisions[i].setPosition(i);
@@ -216,20 +214,20 @@ namespace NIDaqController{
 			channels.Insert(index, new Channel(this, divisions.Count));
 			bindedGrid.RowDefinitions.Insert(index, new RowDefinition() { Height = new GridLength(Channel.height) });
 			for (int i = index; i < channels.Count; i++) {
-				channels[i].setPosition(i);
+				channels[i].rowIndex=i;
 			}
-			bindedGrid.Children.Add(channels[index].getPanel());
-			bindedGrid.Children.Add(channels[index].channelCanvas);
+			bindedGrid.Children.Add(channels[index].panel);
+			bindedGrid.Children.Add(channels[index].canvas);
 			repaint();
 		}
 		//チャンネルを削除
 		public void removeChannel(int index) {
 			DebugWindow.WriteLine(String.Format("{0}列目を削除", index));
-			bindedGrid.Children.Remove(channels[index].getPanel());
-			bindedGrid.Children.Remove(channels[index].channelCanvas);
+			bindedGrid.Children.Remove(channels[index].panel);
+			bindedGrid.Children.Remove(channels[index].canvas);
 			channels.RemoveAt(index);
 			for (int i = index; i < channels.Count; i++) {
-				channels[i].setPosition(i);
+				channels[i].rowIndex=i;
 			}
 			bindedGrid.RowDefinitions.RemoveAt(index);
 			repaint();
@@ -240,8 +238,8 @@ namespace NIDaqController{
 			Channel ch = channels[index];
 			channels[index] = channels[index - 1];
 			channels[index - 1] = ch;
-			channels[index].setPosition(index);
-			channels[index-1].setPosition(index-1);
+			channels[index].rowIndex=index;
+			channels[index-1].rowIndex=index-1;
 			repaint();
 		}
 		//チャンネルを下に移動
@@ -250,8 +248,8 @@ namespace NIDaqController{
 			Channel ch = channels[index];
 			channels[index] = channels[index + 1];
 			channels[index + 1] = ch;
-			channels[index].setPosition(index);
-			channels[index + 1].setPosition(index + 1);
+			channels[index].rowIndex=index;
+			channels[index + 1].rowIndex=index + 1;
 			repaint();
 		}
 
@@ -313,8 +311,8 @@ namespace NIDaqController{
 
 			{
 				StackPanel miniStack = new StackPanel();
-				miniStack.SetValue(Grid.RowProperty, 0);
-				miniStack.SetValue(Grid.ColumnProperty, 0);
+				Grid.SetRow(miniStack, 0);
+				Grid.SetColumn(miniStack, 0);
 				miniStack.Children.Add(new Label() { Content="Name"});
 				miniStack.Children.Add(textSequenceName);
 				miniStack.Children.Add(new Label() { Content = "SampleRate" });
@@ -327,9 +325,9 @@ namespace NIDaqController{
 				bindedGrid.Children.Add(divisions[i].getPanel());
 			}
 			for (int i = 0; i < channels.Count; i++) {
-				channels[i].setPosition(i);
-				channels[i].setSpan(divisions.Count);
-				bindedGrid.Children.Add(channels[i].channelCanvas);
+				channels[i].rowIndex=i;
+				channels[i].span=divisions.Count;
+				bindedGrid.Children.Add(channels[i].canvas);
 			}
 			repaint();
 		}
