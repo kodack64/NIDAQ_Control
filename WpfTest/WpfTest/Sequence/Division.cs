@@ -27,50 +27,104 @@ namespace NIDaqController {
 		private Sequence parent;
 
 		//自身のパネル
-		private StackPanel stackPanel;
+		public StackPanel panel { get; private set; }
 
 		//自身の列
-		private Label columnIndexLabel;
+		private TextBlock Text_columnIndex;
+		public int columnIndex {
+			get {
+				return int.Parse(Text_columnIndex.Text);
+			}
+			set {
+				Text_columnIndex.Text = value.ToString();
+				Grid.SetRow(panel, 0);
+				Grid.SetColumn(panel, value + 1);
+			}
+		}
 
 		//名前
-		private TextBox nameLabel;
+		private TextBox Text_name;
+		public string name {
+			get {
+				return Text_name.Text;
+			}
+			set {
+				Text_name.Text = value;
+			}
+		}
 
 		//時間
-		private TextBox timeLabel;
+		private TextBox Text_time;
+		public double timeValue{
+			get {
+				return double.Parse(Text_time.Text);
+			}
+			set {
+				Text_time.Text = value.ToString();
+			}
+		}
 
 		//時間のユニット
-		private ComboBox unitCombo;
+		private ComboBox Combo_timeUnit;
+		public TimeUnit timeUnit {
+			get {
+				return ((TimeUnit)Enum.Parse(typeof(TimeUnit), Combo_timeUnit.Text));
+			}
+			set {
+				Combo_timeUnit.Text = value.ToString();
+			}
+		}
+		public double time {
+			get{
+				return timeValue*timeUnit.getTime();
+			}
+		}
 
 		//自分が最後かどうか
-		private bool isLast;
+		private bool isLastFlag=false;
+		public bool isLast {
+			get {
+				return isLastFlag;
+			}
+			set {
+				isLastFlag = value;
+				if (value) {
+					name = "Last";
+					timeValue = 0;
+					Text_name.IsEnabled = false;
+					Text_time.IsEnabled = false;
+					Combo_timeUnit.IsEnabled = false;
+				}
+			}
+		}
 
 		//コンストラクタ
 		public Division(Sequence _parent) {
 			parent = _parent;
-			stackPanel = new StackPanel() { Orientation = Orientation.Vertical, ContextMenu = new ContextMenu() };
+			panel = new StackPanel() { Orientation = Orientation.Vertical, ContextMenu = new ContextMenu() };
 			{
-				columnIndexLabel = new Label() { Content = uniqueId,ContextMenu = null };
-				columnIndexLabel.ContextMenuOpening += ((object sender, ContextMenuEventArgs arg) => CheckContextMenu());
-				stackPanel.Children.Add(columnIndexLabel);
+				Text_columnIndex = new TextBlock() { Text = uniqueId.ToString() ,ContextMenu = null };
+				Text_columnIndex.ContextMenuOpening += ((object sender, ContextMenuEventArgs arg) => CheckContextMenu());
+				panel.Children.Add(Text_columnIndex);
 			}
 			{
-				nameLabel = new TextBox() { Text = "Div " + uniqueId, Background = Brushes.LightGray, ContextMenu = null };
-				nameLabel.ContextMenuOpening += ((object sender, ContextMenuEventArgs arg) => CheckContextMenu());
-				stackPanel.Children.Add(nameLabel);
+				Text_name = new TextBox() { Text = "Div " + uniqueId, Background = Brushes.LightGray, ContextMenu = null };
+				Text_name.ContextMenuOpening += ((object sender, ContextMenuEventArgs arg) => CheckContextMenu());
+				panel.Children.Add(Text_name);
 			}
 			{
 				StackPanel miniStack = new StackPanel() { Orientation = Orientation.Horizontal };
-				timeLabel = new TextBox() { Text = "1", Background = Brushes.LightGray, ContextMenu = null, Width = Division.width / 2 };
-				timeLabel.ContextMenuOpening += ((object sender, ContextMenuEventArgs arg) => CheckContextMenu());
-				unitCombo = new ComboBox() { ContextMenu = null ,Width=Division.width/2};
+				Text_time = new TextBox() { Text = "1", Background = Brushes.LightGray, ContextMenu = null, Width = Division.width / 2 };
+				Text_time.ContextMenuOpening += ((object sender, ContextMenuEventArgs arg) => CheckContextMenu());
+				Combo_timeUnit = new ComboBox() { ContextMenu = null ,Width=Division.width/2};
 				foreach (String tu in Enum.GetNames(typeof(TimeUnit))) {
-					unitCombo.Items.Add(tu);
+					Combo_timeUnit.Items.Add(tu);
 				}
-				unitCombo.ContextMenuOpening += ((object sender, ContextMenuEventArgs arg) => CheckContextMenu());
-				unitCombo.SelectedIndex = 0;
-				miniStack.Children.Add(timeLabel);
-				miniStack.Children.Add(unitCombo);
-				stackPanel.Children.Add(miniStack);
+				Combo_timeUnit.ContextMenuOpening += ((object sender, ContextMenuEventArgs arg) => CheckContextMenu());
+				Combo_timeUnit.SelectedIndex = 0;
+				miniStack.Children.Add(Text_time);
+				miniStack.Children.Add(Combo_timeUnit);
+				panel.Children.Add(miniStack);
 			}
 			uniqueId++;
 		}
@@ -79,72 +133,45 @@ namespace NIDaqController {
 		//保存
 		public string toSeq() {
 			string str = "";
-			str += nameLabel.Text + separator;
-			str += timeLabel.Text + separator;
-			str += unitCombo.Text + separator;
+			str += Text_name.Text + separator;
+			str += Text_time.Text + separator;
+			str += Combo_timeUnit.Text + separator;
 			return str; 
 		}
 		//読み込み
 		public void fromSeq(string s) {
 			string[] strs = s.Trim().Split(separator.ToCharArray());
-			nameLabel.Text = strs[0];
-			timeLabel.Text = strs[1];
-			unitCombo.Text = strs[2];
+			Text_name.Text = strs[0];
+			Text_time.Text = strs[1];
+			Combo_timeUnit.Text = strs[2];
 		}
 		//コンテキストメニューの作成
 		public void CheckContextMenu() {
-			stackPanel.ContextMenu.Items.Clear();
-			stackPanel.ContextMenu.Items.Add(new MenuItem() { Header = String.Format("time = {0} {1}", timeLabel.Text, unitCombo.Text), IsEnabled = false });
+			panel.ContextMenu.Items.Clear();
+			panel.ContextMenu.Items.Add(new MenuItem() { Header = String.Format("time = {0} {1}", Text_time.Text, Combo_timeUnit.Text), IsEnabled = false });
 			MenuItem item;
-			item = new MenuItem() { Header = "Edit Division"};
-			if (isLast) item.IsEnabled = false;
+			item = new MenuItem() { Header = "Edit Division" , IsEnabled=!isLast};
 			item.Click += (object sender, RoutedEventArgs arg) => editDivision();
-			stackPanel.ContextMenu.Items.Add(item);
-			item = new MenuItem() { Header = "Remove This Division" };
-			if (isLast) item.IsEnabled = false;
-			item.Click += (object sender, RoutedEventArgs arg) => parent.removeDivision(int.Parse((string)columnIndexLabel.Content));
-			stackPanel.ContextMenu.Items.Add(item);
+			panel.ContextMenu.Items.Add(item);
+			item = new MenuItem() { Header = "Remove This Division", IsEnabled = !isLast };
+			item.Click += (object sender, RoutedEventArgs arg) => parent.removeDivision(int.Parse((string)Text_columnIndex.Text));
+			panel.ContextMenu.Items.Add(item);
 		}
 		//divisionの編集
 		public void editDivision() {
-			EditDivisionWindow window = new EditDivisionWindow(getTime(), (TimeUnit)Enum.Parse(typeof(TimeUnit),unitCombo.Text));
+			EditDivisionWindow window = new EditDivisionWindow(timeValue,timeUnit);
 			window.ShowDialog();
 			if (window.isOk) {
-				timeLabel.Text = window.resultTimeValue.ToString();
-				unitCombo.Text = window.resultTimeUnit.ToString();
+				timeValue = window.resultTimeValue;
+				timeUnit = window.resultTimeUnit;
 			}
 			DebugWindow.WriteLine("Divisionの情報を更新");
 		}
 		//列番号を移動
-		public void setPosition(int i) {
-			columnIndexLabel.Content  = i.ToString();
-			stackPanel.SetValue(Grid.RowProperty, 0);
-			stackPanel.SetValue(Grid.ColumnProperty, i + 1);
-		}
-		//時間を取得
-		public double getTime() {
-			return double.Parse(timeLabel.Text) * ((TimeUnit)Enum.Parse(typeof(TimeUnit),unitCombo.Text)).getTime();
-		}
-		//名前を取得
-		public string getName() {
-			return nameLabel.Text;
-		}
-		//名前を設定
-		public void setName(string str) {
-			nameLabel.Text = str;
-		}
-		//パネルを取得
-		public UIElement getPanel(){
-			return stackPanel;
-		}
-		//最後に設定
-		public void setLast() {
-			nameLabel.Text = "Last";
-			nameLabel.IsEnabled = false;
-			timeLabel.Text = "0";
-			timeLabel.IsEnabled = false;
-			unitCombo.IsEnabled = false;
-			isLast = true;
-		}
+/*		public void setPosition(int i) {
+			Text_columnIndex.Text  = i.ToString();
+			Grid.SetRow(panel,0);
+			Grid.SetColumn(panel, i + 1);
+		}*/
 	}
 }

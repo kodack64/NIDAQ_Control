@@ -38,7 +38,7 @@ namespace NIDaqController{
 		//コンストラクタ
 		public Sequence() {
 			Division lastDivision = new Division(this);
-			lastDivision.setLast();
+			lastDivision.isLast = true;
 			divisions.Add(lastDivision);
 			waves = new List<List<double[]>>();
 			textSequenceName = new TextBox() { Text="Sequence"+uniqueId};
@@ -101,7 +101,7 @@ namespace NIDaqController{
 		////////////////情報取得
 		//divisionごとのサンプル数を取得
 		public long getDivisionSampleCount(int divisionIndex,long sampleRate) {
-			return (long)(divisions[divisionIndex].getTime()*sampleRate);
+			return (long)(divisions[divisionIndex].time*sampleRate);
 		}
 		//シーケンス全体のサンプル数を取得
 		public long getSequenceSampleCount(long sampleRate) {
@@ -113,13 +113,13 @@ namespace NIDaqController{
 		}
 		//divisionの時間を取得
 		public double getDivisionTime(int index) {
-			return divisions[index].getTime();
+			return divisions[index].time;
 		}
 		//シーケンス全体の時間を取得
 		public double getSequenceTime() {
 			double sum = 0;
 			foreach (Division div in divisions) {
-				sum += div.getTime();
+				sum += div.time;
 			}
 			return sum;
 		}
@@ -175,7 +175,7 @@ namespace NIDaqController{
 		}
 		//division名を取得
 		public string getDivisionName(int index) {
-			return divisions[index].getName();
+			return divisions[index].name;
 		}
 
 
@@ -189,21 +189,21 @@ namespace NIDaqController{
 				ch.insertNode(index,0);
 			}
 			for (int i = index; i < divisions.Count; i++) {
-				divisions[i].setPosition(i);
+				divisions[i].columnIndex=i;
 			}
-			bindedGrid.Children.Add(divisions[index].getPanel());
+			bindedGrid.Children.Add(divisions[index].panel);
 			repaint();
 		}
 		//divisionを削除
 		public void removeDivision(int index) {
 			DebugWindow.WriteLine(String.Format("{0}行目を削除", index));
-			bindedGrid.Children.Remove(divisions[index].getPanel());
+			bindedGrid.Children.Remove(divisions[index].panel);
 			divisions.RemoveAt(index);
 			foreach(Channel ch in channels){
 				ch.removePlot(index);
 			}
 			for (int i = index; i < divisions.Count; i++) {
-				divisions[i].setPosition(i);
+				divisions[i].columnIndex=i;
 			}
 			bindedGrid.ColumnDefinitions.RemoveAt(index);
 			repaint();
@@ -321,8 +321,8 @@ namespace NIDaqController{
 			}
 
 			for (int i = 0; i < divisions.Count; i++) {
-				divisions[i].setPosition(i);
-				bindedGrid.Children.Add(divisions[i].getPanel());
+				divisions[i].columnIndex = i;
+				bindedGrid.Children.Add(divisions[i].panel);
 			}
 			for (int i = 0; i < channels.Count; i++) {
 				channels[i].rowIndex=i;

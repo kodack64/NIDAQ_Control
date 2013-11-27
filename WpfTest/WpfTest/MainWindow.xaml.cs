@@ -96,11 +96,7 @@ namespace WpfTest {
 
 		// 起動ボタンの処理
 		private void Callback_SystemRun(object sender, RoutedEventArgs e) {
-
 			ToggleButton element = sender as ToggleButton;
-
-
-
 			//起動の場合
 			if (element.IsChecked.HasValue && element.IsChecked.Value) {
 				//既にスレッドが起動中でなければスレッドを起動しボタンをトグル

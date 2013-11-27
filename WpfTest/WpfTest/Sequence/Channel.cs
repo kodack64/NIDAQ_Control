@@ -13,7 +13,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using NIDaqInterfaceDummy;
 
 namespace NIDaqController {
 	//シーケンスのうち単一の入出力ライン
@@ -88,7 +87,11 @@ namespace NIDaqController {
 		private TextBox Text_minVoltage;
 		public double minVoltage {
 			get {
-				return double.Parse(Text_minVoltage.Text);
+				try {
+					return double.Parse(Text_minVoltage.Text);
+				} catch (Exception) {
+					return 0;
+				}
 			}
 			set {
 				Text_minVoltage.Text = value.ToString();
@@ -99,7 +102,11 @@ namespace NIDaqController {
 		private TextBox Text_maxVoltage;
 		public double maxVoltage {
 			get {
-				return double.Parse(Text_maxVoltage.Text);
+				try{
+					return double.Parse(Text_maxVoltage.Text);
+				} catch (Exception) {
+					return 0;
+				}
 			}
 			set {
 				Text_maxVoltage.Text = value.ToString();
@@ -114,6 +121,7 @@ namespace NIDaqController {
 			}
 			set {
 				Grid.SetColumnSpan(canvas, value);
+				repaintValueBoxes();
 			}
 		}
 
@@ -141,11 +149,13 @@ namespace NIDaqController {
 			IOCombo = new ComboBox() { };
 			IOCombo.Items.Add("Out"); IOCombo.Items.Add("In");
 			Combo_deviceName = new ComboBox() { };
-			foreach (string str in NIDaqTaskManager.GetInstance().getAnalogOutputList()) {
+			foreach (string str in TaskManager.GetInstance().getAnalogOutputList()) {
 				Combo_deviceName.Items.Add(str);
 			}
-			Text_minVoltage = new TextBox() { Text = "-1" , Width=20};
-			Text_maxVoltage = new TextBox() { Text = "1", Width=20 };
+			Text_minVoltage = new TextBox() { Text = "-1" , Width=40};
+			Text_minVoltage.TextChanged += (s, e) => repaint();
+			Text_maxVoltage = new TextBox() { Text = "1", Width=40 };
+			Text_maxVoltage.TextChanged += (s, e) => repaint();
 
 			panel.Children.Add(Text_rowIndex);
 			panel.Children.Add(Text_name);
@@ -166,13 +176,14 @@ namespace NIDaqController {
 			}
 
 			for (int i = 0; i < divisionCount - 1; i++) {
-				nodes.Add(new Node() { index = 0, value = 0, type = NodeType.Hold, isEnd = false });
+				nodes.Add(new Node(this) { index = 0, value = 0, type = NodeType.Hold, isEnd = false });
 			}
-			nodes.Add(new Node() { index = 0, value = 0, type = NodeType.Hold, isEnd = true });
+			nodes.Add(new Node(this) { index = 0, value = 0, type = NodeType.Hold, isEnd = true });
 
 			canvas = new Canvas() { Background = Brushes.White, ContextMenu = new ContextMenu() };
 			canvas.SetValue(Grid.ColumnSpanProperty, divisionCount);
 			canvas.ContextMenuOpening += (object sender, ContextMenuEventArgs e) => CheckContextMenuOfCanvas();
+			repaintValueBoxes();
 		}
 
 		//チャンネルラベルのコンテキストメニュー表示
@@ -265,28 +276,22 @@ namespace NIDaqController {
 			DebugWindow.WriteLine("チャンネルの情報を更新");
 			repaint();
 		}
-		//自身の行を変更
-/*		public void setPosition(int row) {
-			Text_rowIndex.Text = row.ToString();
-			Grid.SetRow(panel, row + 1);
-			Grid.SetColumn(panel,0);
-			Grid.SetRow(canvas, row + 1);
-			Grid.SetColumn(canvas, 1);
-		}*/
-		//divisionの数を更新
-/*		public void setSpan(int span) {
-			Grid.SetColumnSpan(canvas, span);
-		}*/
 
 		//ノードを挿入
 		public void insertNode(int index, double value) {
-			nodes.Insert(index, new Node() { index = index, value = value, type = NodeType.Hold, isEnd = false });
-			Grid.SetColumnSpan(canvas, nodes.Count);
+			nodes.Insert(index, new Node(this) { index = index, value = value, type = NodeType.Hold, isEnd = false });
+			for (int i = index + 1;i<nodes.Count ; i++) {
+				nodes[i].index = i;
+			}
+			span = nodes.Count;
 		}
 		//ノードを削除
 		public void removePlot(int index) {
 			nodes.RemoveAt(index);
-			Grid.SetColumnSpan(canvas, nodes.Count);
+			for (int i = index; i < nodes.Count; i++) {
+				nodes[i].index = i;
+			}
+			span = nodes.Count;
 		}
 
 		private const string separator = ",";
@@ -319,25 +324,53 @@ namespace NIDaqController {
 			int tempPlotsCount = int.Parse(strs[7]);
 			nodes.Clear();
 			for (int i = 0; i < tempPlotsCount; i++) {
-				Node Node = new Node();
+				Node Node = new Node(this) { index=i};
 				Node.fromSeq(strs[8 + i]);
 				nodes.Add(Node);
 			}
 		}
 		//キャンバス中でのノードの高さを計算
-		private double canvasHeight(double voltage,double minVol,double maxVol) {
-			return (1.0 - 1.0 * (voltage - minVol) / (maxVol - minVol)) * height;
+		private double plotHeightInCanvas(double voltage,double minVol,double maxVol) {
+			if (minVol == maxVol) return height/2;
+			double plotheight = (1.0 - 1.0 * (voltage - minVol) / (maxVol - minVol)) * height;
+			if (plotheight < 0) plotheight = 0;
+			if (plotheight > height) plotheight =height;
+			return plotheight;
 		}
 		//再描画
 		public void repaint() {
+			repaintPlotLines();
+		}
+		private void repaintValueBoxes (){
 			canvas.Children.Clear();
+			for (int i = 0; i < nodes.Count; i++) {
+				canvas.Children.Add(nodes[i].Text_value);
+
+				Label lb = new Label() { Content = "V" };
+				Canvas.SetLeft(lb, Division.width * i + 40.0);
+				canvas.Children.Add(lb);
+
+				canvas.Children.Add(nodes[i].Combo_type);
+			}
+			repaint();
+		}
+		public void repaintPlotLines(){
+
+			List<UIElement> deleted=new List<UIElement>();
+			foreach (UIElement uie in canvas.Children) {
+				if (uie is Line || uie is Ellipse)	deleted.Add(uie);
+			}
+			foreach (UIElement uie in deleted) {
+				canvas.Children.Remove(uie);
+			}
+
 			double minVol = minVoltage;
 			double maxVol = maxVoltage;
 			double circleSize = 4.0;
 			for (int i = 0; i < nodes.Count; i++) {
 				Ellipse Node = new Ellipse() { Fill=Brushes.Black,StrokeThickness=2,Width=8,Height=8};
 				Canvas.SetLeft(Node, Division.width * i - circleSize);
-				Canvas.SetTop(Node, canvasHeight(nodes[i].value, minVol, maxVol) - circleSize);
+				Canvas.SetTop(Node, plotHeightInCanvas(nodes[i].value, minVol, maxVol) - circleSize);
 				canvas.Children.Add(Node);
 					
 				Line gridline;
@@ -354,45 +387,29 @@ namespace NIDaqController {
 				gridline.Y2 = height;
 				canvas.Children.Add(gridline);
 
-				TextBox tb = new TextBox() { Width=40 , Text=nodes[i].value.ToString() , Background=Brushes.LightGray};
-				Canvas.SetLeft(tb, Division.width * i);
-				canvas.Children.Add(tb);
-
-				Label lb = new Label() { Content = "V" };
-				Canvas.SetLeft(lb, Division.width * i + 40.0);
-				canvas.Children.Add(lb);
-
-				if (i + 1 < nodes.Count && nodes[i].type != NodeType.Through) {
-					int next;
-					Line line;
-					for (next = i + 1; next < nodes.Count; next++) {
-						if (nodes[next].type != NodeType.Through) {
-							break;
-						}
-					}
-					if (next < nodes.Count) {
-						if (nodes[i].type == NodeType.Hold) {
-							line = new Line() { Stroke=Brushes.LightGray,StrokeThickness=2};
-							line.X1 = Division.width * i;
-							line.X2 = Division.width * next;
-							line.Y1 = canvasHeight(nodes[i].value,minVol,maxVol);
-							line.Y2 = line.Y1;
-							canvas.Children.Add(line);
-							line = new Line() { Stroke = Brushes.LightGray, StrokeThickness = 2 };
-							line.X1 = Division.width * next;
-							line.X2 = Division.width * next;
-							line.Y1 = canvasHeight(nodes[i].value, minVol, maxVol);
-							line.Y2 = canvasHeight(nodes[next].value, minVol, maxVol);
-							canvas.Children.Add(line);
-						} else if (nodes[i].type == NodeType.Linear) {
-							line = new Line() { Stroke = Brushes.LightGray, StrokeThickness = 2 };
-							line.X1 = Division.width * i;
-							line.X2 = Division.width * next;
-							line.Y1 = canvasHeight(nodes[i].value, minVol, maxVol);
-							line.Y2 = canvasHeight(nodes[next].value, minVol, maxVol);
-							canvas.Children.Add(line);
-						}
-					}
+				Line line;
+				int next = i + 1;
+				if (next == nodes.Count) continue;
+				if (nodes[i].type == NodeType.Hold) {
+					line = new Line() { Stroke=Brushes.LightGray,StrokeThickness=2};
+					line.X1 = Division.width * i;
+					line.X2 = Division.width * next;
+					line.Y1 = plotHeightInCanvas(nodes[i].value,minVol,maxVol);
+					line.Y2 = line.Y1;
+					canvas.Children.Add(line);
+					line = new Line() { Stroke = Brushes.LightGray, StrokeThickness = 2 };
+					line.X1 = Division.width * next;
+					line.X2 = Division.width * next;
+					line.Y1 = plotHeightInCanvas(nodes[i].value, minVol, maxVol);
+					line.Y2 = plotHeightInCanvas(nodes[next].value, minVol, maxVol);
+					canvas.Children.Add(line);
+				} else if (nodes[i].type == NodeType.Linear) {
+					line = new Line() { Stroke = Brushes.LightGray, StrokeThickness = 2 };
+					line.X1 = Division.width * i;
+					line.X2 = Division.width * next;
+					line.Y1 = plotHeightInCanvas(nodes[i].value, minVol, maxVol);
+					line.Y2 = plotHeightInCanvas(nodes[next].value, minVol, maxVol);
+					canvas.Children.Add(line);
 				}
 			}
 		}
