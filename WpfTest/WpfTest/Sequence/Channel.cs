@@ -19,7 +19,7 @@ namespace NIDaqController {
 	//シーケンスのうち単一の入出力ライン
 	public class Channel {
 		//描画時の高さ
-		public static readonly int height=130;
+		public static readonly int height=120;
 		//ユニークID
 		private static int uniqueId = 0;
 		//自身の所属
@@ -71,10 +71,10 @@ namespace NIDaqController {
 
 			channelLabel = new Label() { Background=Brushes.Black , Foreground=Brushes.White };
 			channelName = new TextBox() { Text = "IO " + uniqueId, Background = Brushes.LightGray, ContextMenu = new ContextMenu() };
-//				channelLabel.ContextMenuOpening += (object sender, ContextMenuEventArgs arg) => CheckContextMenuOfLabel();
+//			channelLabel.ContextMenuOpening += (object sender, ContextMenuEventArgs arg) => CheckContextMenuOfLabel();
 			uniqueId++;
 			ADCombo = new ComboBox() { };
-			ADCombo.Items.Add("Ana"); ADCombo.Items.Add("Dig");
+			ADCombo.Items.Add("Analog"); ADCombo.Items.Add("Digital");
 			IOCombo = new ComboBox() { };
 			IOCombo.Items.Add("Out"); IOCombo.Items.Add("In");
 			channelDevice = new ComboBox() { };
@@ -288,22 +288,25 @@ namespace NIDaqController {
 				channelCanvas.Children.Add(Node);
 					
 				Line gridline;
-				gridline = new Line();
-				gridline.Stroke = Brushes.Black;
-				gridline.StrokeThickness = 2;
+				gridline = new Line() { Stroke=Brushes.Black, StrokeThickness=2};
 				gridline.X1 = 0;
 				gridline.X2 = Division.width * nodes.Count;
 				gridline.Y1 = 0;
 				gridline.Y2 = 0;
 				channelCanvas.Children.Add(gridline);
-				gridline = new Line();
-				gridline.Stroke = Brushes.Black;
-				gridline.StrokeThickness = 2;
+				gridline = new Line() { Stroke = Brushes.Black, StrokeThickness = 2 };
 				gridline.X1 = 0;
 				gridline.X2 = Division.width * nodes.Count;
 				gridline.Y1 = height;
 				gridline.Y2 = height;
 				channelCanvas.Children.Add(gridline);
+
+				TextBox tb = new TextBox() { Width=40 , Text=nodes[i].value.ToString() , Background=Brushes.LightGray};
+				channelCanvas.Children.Add(tb);
+				Canvas.SetLeft(tb,Division.width * i);
+				Label lb = new Label() { Content = "V" };
+				Canvas.SetLeft(lb, Division.width * i + 40.0);
+				channelCanvas.Children.Add(lb);
 
 				if (i + 1 < nodes.Count && nodes[i].type != NodeType.Through) {
 					int next;

@@ -23,6 +23,8 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>
+    </DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -85,37 +87,37 @@
     </ApplicationDefinition>
     <Compile Include="Sequence\Channel.cs" />
     <Compile Include="Sequence\Division.cs" />
-    <Compile Include="EditWindow\EditDivisionWindow.xaml.cs">
+    <Compile Include="SubWindow\EditDivisionWindow.xaml.cs">
       <DependentUpon>EditDivisionWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="EditWindow\EditIOWindow.xaml.cs">
+    <Compile Include="SubWindow\EditIOWindow.xaml.cs">
       <DependentUpon>EditIOWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="EditWindow\EditValueWindow.xaml.cs">
+    <Compile Include="SubWindow\EditValueWindow.xaml.cs">
       <DependentUpon>EditValueWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Sequence\Node.cs" />
     <Compile Include="Sequence\Sequence.cs" />
     <Compile Include="Sequence\Sequences.cs" />
     <Compile Include="Sequence\TimeUnit.cs" />
-    <Compile Include="TaskManager.cs" />
+    <Compile Include="Sequence\TaskManager.cs" />
     <Page Include="CaptionFontResource.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="EditWindow\DebugWindow.xaml">
+    <Page Include="SubWindow\DebugWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="EditWindow\EditDivisionWindow.xaml">
+    <Page Include="SubWindow\EditDivisionWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="EditWindow\EditIOWindow.xaml">
+    <Page Include="SubWindow\EditIOWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="EditWindow\EditValueWindow.xaml">
+    <Page Include="SubWindow\EditValueWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -128,7 +130,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Sequence\Communicator.cs" />
-    <Compile Include="EditWindow\DebugWindow.xaml.cs">
+    <Compile Include="SubWindow\DebugWindow.xaml.cs">
       <DependentUpon>DebugWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="MainWindow.xaml.cs">
