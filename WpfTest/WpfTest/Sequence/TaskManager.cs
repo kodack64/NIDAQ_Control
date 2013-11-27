@@ -28,7 +28,7 @@ namespace NIDaqController {
 		public string[] getDigitalOutputList() {
 			return NIDaqTaskManager.GetInstance().getDigitalOutputList();
 		}
-		public void popTask(long sampleRate, string[] channelNameArray, double[,] waveArray, double[,] minmaxVoltage) {
+		public void popTask(double sampleRate, string[] channelNameArray, double[,] waveArray, double[,] minmaxVoltage) {
 			NIDaqTaskManager.GetInstance().popTask(sampleRate, channelNameArray, waveArray, minmaxVoltage);
 		}
 		public void start() {

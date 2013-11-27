@@ -41,7 +41,7 @@ namespace NIDaqInterface
 			return digitalOutputList;
 		}
 
-		public void popTask(long sampleRate,string[] channelNameArray , double[,] waveArray,double[,] minmaxVoltage){
+		public void popTask(double sampleRate,string[] channelNameArray , double[,] waveArray,double[,] minmaxVoltage){
 			try {
 				if (channelNameArray.Length != waveArray.GetLength(0) || channelNameArray.Length == 0) return;
 				TaskPack taskPack = new TaskPack(channelNameArray,waveArray,sampleRate,minmaxVoltage,((s,e)=>doNextTask()));

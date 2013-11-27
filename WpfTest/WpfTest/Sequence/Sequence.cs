@@ -29,9 +29,28 @@ namespace NIDaqController{
 		private Grid bindedGrid;
 		//シーケンス名
 		private TextBox textSequenceName;
+		public string name{
+			get {
+				return textSequenceName.Text;
+			}
+			set {
+				textSequenceName.Text = value;
+			}
+		}
 		//サンプルレート
 		private TextBox textSampleRate;
-		public double getSampleRate() { return double.Parse(textSampleRate.Text); }
+		public double samleRate {
+			get {
+				try {
+					return double.Parse(textSampleRate.Text);
+				} catch (Exception) {
+					return 100;
+				}
+			}
+			set {
+				textSampleRate.Text = value.ToString();
+			}
+		}
 
 
 		////////////////初期化
@@ -56,7 +75,7 @@ namespace NIDaqController{
 
 		////////////////波形成性
 		//現在のシーケンスから波形を生成
-		public void compile(long sampleRate) {
+		public void compile(double sampleRate) {
 			DebugWindow.Write("シーケンスから信号を作成...");
 			waves.Clear();
 			for (int ci = 0; ci < channels.Count; ci++) {
@@ -100,11 +119,11 @@ namespace NIDaqController{
 
 		////////////////情報取得
 		//divisionごとのサンプル数を取得
-		public long getDivisionSampleCount(int divisionIndex,long sampleRate) {
+		public long getDivisionSampleCount(int divisionIndex,double sampleRate) {
 			return (long)(divisions[divisionIndex].time*sampleRate);
 		}
 		//シーケンス全体のサンプル数を取得
-		public long getSequenceSampleCount(long sampleRate) {
+		public long getSequenceSampleCount(double sampleRate) {
 			long sum = 0;
 			for (int i = 0; i < divisions.Count; i++) {
 				sum += getDivisionSampleCount(i, sampleRate);

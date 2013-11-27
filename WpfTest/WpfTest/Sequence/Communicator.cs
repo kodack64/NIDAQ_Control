@@ -20,7 +20,7 @@ namespace NIDaqController{
 		private TaskManager taskManager;
 
 		//サンプルレート
-		private long sampleRate;
+		private double sampleRate;
 
 		//コンストラクタ
 		public NIDaqCommunicator(Sequences _seq) {
@@ -28,14 +28,11 @@ namespace NIDaqController{
 			sampleRate = defaultSampleRate;
 			taskManager = TaskManager.GetInstance();
 		}
-		//サンプルレートの設定
-		public void changeSampleRate(long _sampleRate) {
-			sampleRate = _sampleRate;
-		}
 
 		//現在のシーケンスからタスクを生成しキューに入れる
 		public void Run() {
 			Sequence current = seq.getCurrentSequence();
+			sampleRate = current.samleRate;
 
 			current.compile(sampleRate);
 			int aochan = current.getEnabledChannelCount();

@@ -11,7 +11,7 @@ namespace NIDaqInterface {
 		Task task;
 
 		AnalogMultiChannelWriter aowriter;
-		public TaskPack(string[] _name, double[,] _wave, long sampleRate, double[,] minmaxVoltage, TaskDoneEventHandler done) {
+		public TaskPack(string[] _name, double[,] _wave, double sampleRate, double[,] minmaxVoltage, TaskDoneEventHandler done) {
 			waveArray = _wave;
 			channelNameArray = _name;
 			task = new Task();

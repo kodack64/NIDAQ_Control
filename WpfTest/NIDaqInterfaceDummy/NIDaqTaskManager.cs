@@ -39,19 +39,19 @@ namespace NIDaqInterfaceDummy{
 			return digitalOutputList;
 		}
 
-		public void popTask(long sampleRate, string[] channelNameArray, double[,] waveArray, double[,] minmaxVoltage) {			
+		public void popTask(double sampleRate, string[] channelNameArray, double[,] waveArray, double[,] minmaxVoltage) {			
 			taskQueue.Enqueue(new Thread(this.dummyTask));
 		}
 
-		private volatile bool stoped=false;
+		private volatile bool stopped=false;
 		public void dummyTask() {
-			stoped=false;
+			stopped=false;
 			int count=0;
-			while (!stoped && count<10) {
+			while (!stopped && count<10) {
 				Thread.Sleep(100);
 				count++;
 			}
-			doNextTask();
+			if(!stopped)doNextTask();
 		}
 		public void start() {
 			if (!isRunning) {
@@ -62,21 +62,28 @@ namespace NIDaqInterfaceDummy{
 			}
 		}
 		public void stop() {
-			if (isRunning) {
+			lock (this) {
+				if (isRunning) {
 				isRunning = false;
-				taskQueue.Peek().Join();
-				taskQueue.Dequeue();
+					if (taskQueue.Count > 0) {
+						stopped = true;
+						taskQueue.Peek().Join();
+						taskQueue.Dequeue();
+					}
+				}
 			}
 		}
 		public void doNextTask() {
-			if (taskQueue.Count > 0) {
-				taskQueue.Dequeue();
-			}
-			if (isRunning) {
-				if (taskQueue.Count == 0) {
-					isRunning = false;
-				} else {
-					taskQueue.Peek().Start();
+			lock (this) {
+				if (taskQueue.Count > 0) {
+					taskQueue.Dequeue();
+				}
+				if (isRunning) {
+					if (taskQueue.Count == 0) {
+						isRunning = false;
+					} else {
+						taskQueue.Peek().Start();
+					}
 				}
 			}
 		}
