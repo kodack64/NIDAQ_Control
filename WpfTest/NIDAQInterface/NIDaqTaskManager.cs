@@ -9,6 +9,12 @@ namespace NIDaqInterface
 {
 	
 	public class NIDaqTaskManager {
+		public delegate void TaskEvent();
+
+		public event TaskEvent taskEndEvent = delegate { };
+		public event TaskEvent allTaskEndEvent = delegate { };
+		public event TaskEvent taskStartEvent = delegate { };
+
 		private volatile Queue<TaskPack> taskQueue = new Queue<TaskPack>();
 		private bool isRunning;
 		private static NIDaqTaskManager myInstance;

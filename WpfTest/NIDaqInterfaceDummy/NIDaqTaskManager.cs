@@ -10,9 +10,9 @@ namespace NIDaqInterfaceDummy{
 	public class NIDaqTaskManager{
 		public delegate void TaskEvent();
 
-		private TaskEvent taskEndEvent=null;
-		private TaskEvent allTaskEndEvent=null;
-		private TaskEvent taskStartEvent=null;
+		public event TaskEvent taskEndEvent = delegate { };
+		public event TaskEvent allTaskEndEvent = delegate { };
+		public event TaskEvent taskStartEvent = delegate { };
 
 		private Queue <Thread> taskQueue = new Queue<Thread>();
 		private static NIDaqTaskManager myInstance;
@@ -51,33 +51,26 @@ namespace NIDaqInterfaceDummy{
 
 		private volatile bool stopped=false;
 		public void dummyTask() {
-			stopped=false;
+			taskStartEvent();
+			stopped = false;
 			int count=0;
-			while (!stopped && count<10) {
+			while (!stopped && count<100) {
 				Thread.Sleep(100);
 				count++;
 			}
-			if(!stopped)doNextTask();
+			taskEndEvent();
+			if (!stopped) doNextTask();
 		}
 
-		public void registStartEvent(TaskEvent func) {
-			taskStartEvent += func;
-		}
-		public void registEndEvent(TaskEvent func) {
-			taskEndEvent += func;
-		}
-		public void registAllEndEvent(TaskEvent func) {
-			allTaskEndEvent += func;
-		}
 		public void start() {
 			if (!isRunning) {
 				if (taskQueue.Count > 0) {
 					isRunning = true;
-					taskStartEvent();
 					taskQueue.Peek().Start();
 				}
 			}
 		}
+
 		public void stop() {
 			lock (this) {
 				if (isRunning) {
@@ -97,7 +90,6 @@ namespace NIDaqInterfaceDummy{
 		public void doNextTask() {
 			lock (this) {
 				if (taskQueue.Count > 0) {
-					taskEndEvent();
 					taskQueue.Dequeue();
 				}
 				if (isRunning) {

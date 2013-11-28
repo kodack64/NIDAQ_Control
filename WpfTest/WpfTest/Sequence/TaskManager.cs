@@ -37,5 +37,14 @@ namespace NIDaqController {
 		public void stop() {
 			NIDaqTaskManager.GetInstance().stop();
 		}
+		public void addTaskStartEventHandler(Action func) {
+			NIDaqTaskManager.GetInstance().taskStartEvent += ()=>func();
+		}
+		public void addTaskEndEventHandler(Action func) {
+			NIDaqTaskManager.GetInstance().taskEndEvent += () => func();
+		}
+		public void addAllTaskEndEventHandler(Action func) {
+			NIDaqTaskManager.GetInstance().allTaskEndEvent += () => func();
+		}
 	}
 }

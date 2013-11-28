@@ -27,16 +27,19 @@ namespace WpfTest {
 	public partial class MainWindow : Window {
 
 		// 入出力
-		NIDaqCommunicator communicator;
+		private NIDaqCommunicator communicator;
 
 		// シーケンス
-		Sequences seq;
+		private Sequences seq;
+
+		// インスタンス
+		public static MainWindow myInstance;
 
 		//繰り返し回数
 		public int repeatCount {
 			get {
 				try {
-					return int.Parse(Text_Repeat_Run.Text);
+					return int.Parse(Text_RepeatRun.Text);
 				}catch(Exception){
 					return 1;
 				}
@@ -45,12 +48,14 @@ namespace WpfTest {
 		//繰り返しを有効にするかどうか
 		public bool IsRepeatEnable {
 			get {
-				return Check_Repeat_Run.IsChecked.Value;
+				return Check_RepeatRun.IsChecked.Value;
 			}
 		}
 		
 		// コンストラクタ
 		public MainWindow() {
+			myInstance = this;
+
 			DebugWindow.WriteLine("初期化");
 			InitializeComponent();
 
@@ -63,6 +68,8 @@ namespace WpfTest {
 
 			//ウィンドウをどこでもつかめるように
 			this.MouseLeftButtonDown += (sender, e) => this.DragMove();
+
+			TaskManager.GetInstance().addAllTaskEndEventHandler(Callback_SystemStop);
 		}
 
 		// 列挿入のコールバック
@@ -113,10 +120,11 @@ namespace WpfTest {
 
 		// 起動ボタンの処理
 		private void Callback_SystemRun(object sender, RoutedEventArgs e) {
-			ToggleButton element = sender as ToggleButton;
 			//起動の場合
-			if (element.IsChecked.HasValue && element.IsChecked.Value) {
+			if (Button_Run.IsChecked.HasValue && Button_Run.IsChecked.Value) {
 				//既にスレッドが起動中でなければスレッドを起動しボタンをトグル
+				communicator.isRepeatEnabled = IsRepeatEnable;
+				communicator.repeatCount = repeatCount;
 				communicator.Run();
 				Button_Run.Content = "Stop Sequence";
 				DebugWindow.WriteLine("シーケンス開始");
@@ -128,6 +136,20 @@ namespace WpfTest {
 				Button_Run.Content = "Run Sequence";
 				DebugWindow.WriteLine("シーケンス中断");
 			}
+		}
+
+		//終了のコールバック
+		private void Callback_SystemStop() {
+			Button_Run.Dispatcher.BeginInvoke(
+				new Action(() => 
+				{
+					if (Button_Run.IsChecked.HasValue && Button_Run.IsChecked.Value) {
+						Button_Run.IsChecked = false;
+						Button_Run.Content = "Run Sequence";
+						DebugWindow.WriteLine("シーケンス終了");
+					}
+				})
+			);
 		}
 
 		// シーケンスファイルのロード
@@ -174,6 +196,11 @@ namespace WpfTest {
 		// キャンバスの再描画
 		public void repaint() {
 			seq.getCurrentSequence().repaint();
+		}
+
+		private void Callback_RepeatChanged(object sender, RoutedEventArgs e) {
+			CheckBox cb = sender as CheckBox;
+			Text_RepeatRun.IsEnabled = cb.IsChecked.Value;
 		}
 	}
 }

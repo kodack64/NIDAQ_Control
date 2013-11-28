@@ -15,6 +15,10 @@ namespace NIDaqController{
 
 		private const long defaultSampleRate = (long)2.5e6;
 
+		public bool isRepeatEnabled;
+		public int repeatCount;
+		private int currentRepeatCount;
+
 		//シーケンス
 		private Sequences seq;
 
@@ -29,14 +33,23 @@ namespace NIDaqController{
 			seq = _seq;
 			sampleRate = defaultSampleRate;
 			taskManager = TaskManager.GetInstance();
+			taskManager.addTaskEndEventHandler(TaskEnd);
+			repeatCount = 0;
+			currentRepeatCount = 0;
+			isRepeatEnabled = false;
 		}
 
 		//現在のシーケンスからタスクを生成しキューに入れる
 		public void Run() {
+
 			Sequence current = seq.getCurrentSequence();
 			sampleRate = current.samleRate;
 
 			current.compile(sampleRate);
+
+			convert();
+		}
+		public void convert(){
 			int aochan = current.getEnabledChannelCount();
 			long sampleSum = current.getSequenceSampleCount(sampleRate);
 			string[] nameList = new string[aochan];
@@ -62,20 +75,21 @@ namespace NIDaqController{
 				}
 			}
 
-			//タスクキューに積んで開始
-			try {
-				taskManager.popTask(sampleRate, nameList, waveArray, minmaxVoltage);
-				taskManager.start();
-			} catch (Exception e) {
-				DebugWindow.WriteLine("********** DAQmxエラー **********");
-				DebugWindow.WriteLine(e.Message);
-				DebugWindow.WriteLine("*********************************");
-			}
 		}
 
 		//停止
 		public void Stop() {
+			repeatCount = 0;
 			taskManager.stop();
+		}
+
+		//最新タスクが終了
+		public void TaskEnd() {
+			if (isRepeatEnabled && currentRepeatCount<repeatCount) {
+				MainWindow.myInstance.Dispatcher.BeginInvoke(
+					new Action(() => { Run(); })
+					);
+			}
 		}
 	}
 }

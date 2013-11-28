@@ -75,7 +75,7 @@ namespace NIDaqController{
 
 		////////////////波形成性
 		//現在のシーケンスから波形を生成
-		public void compile(double sampleRate) {
+		public void compile(double sampleRate) {			
 			DebugWindow.Write("シーケンスから信号を作成...");
 			waves.Clear();
 			for (int ci = 0; ci < channels.Count; ci++) {
