@@ -11,6 +11,8 @@ namespace NIDaqController{
 	// NIDaqの通信箇所
 	public class NIDaqCommunicator {
 
+		private delegate void taskEndEvent();
+
 		private const long defaultSampleRate = (long)2.5e6;
 
 		//シーケンス

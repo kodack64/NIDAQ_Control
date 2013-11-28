@@ -8,6 +8,12 @@ using System.Threading;
 namespace NIDaqInterfaceDummy{
 
 	public class NIDaqTaskManager{
+		public delegate void TaskEvent();
+
+		private TaskEvent taskEndEvent=null;
+		private TaskEvent allTaskEndEvent=null;
+		private TaskEvent taskStartEvent=null;
+
 		private Queue <Thread> taskQueue = new Queue<Thread>();
 		private static NIDaqTaskManager myInstance;
 		bool isRunning;
@@ -20,10 +26,10 @@ namespace NIDaqInterfaceDummy{
 		string[] digitalInputList;
 		string[] digitalOutputList;
 		private NIDaqTaskManager() {
-			analogOutputList = new string[3] { "ao1", "ao2", "ao3" };
-			analogInputList = new string[3] { "ai1", "ai2", "ai3" };
-			digitalOutputList = new string[3] { "do1", "do2", "do3" };
-			digitalInputList = new string[3] { "di1", "di2", "di3" };
+			analogOutputList = new string[3] { "dev1/ao1", "dev1/ao2", "dev2/ao3" };
+			analogInputList = new string[3] { "dev1/ai1", "dev1/ai2", "dev2/ai3" };
+			digitalOutputList = new string[3] { "dev1/do1", "dev1/do2", "dev2/do3" };
+			digitalInputList = new string[3] { "dev1/di1", "dev1/di2", "dev2/di3" };
 			isRunning = false;
 		}
 		public string[] getAnalogInputList() {
@@ -53,10 +59,21 @@ namespace NIDaqInterfaceDummy{
 			}
 			if(!stopped)doNextTask();
 		}
+
+		public void registStartEvent(TaskEvent func) {
+			taskStartEvent += func;
+		}
+		public void registEndEvent(TaskEvent func) {
+			taskEndEvent += func;
+		}
+		public void registAllEndEvent(TaskEvent func) {
+			allTaskEndEvent += func;
+		}
 		public void start() {
 			if (!isRunning) {
 				if (taskQueue.Count > 0) {
 					isRunning = true;
+					taskStartEvent();
 					taskQueue.Peek().Start();
 				}
 			}
@@ -66,9 +83,13 @@ namespace NIDaqInterfaceDummy{
 				if (isRunning) {
 				isRunning = false;
 					if (taskQueue.Count > 0) {
+						taskEndEvent();
 						stopped = true;
 						taskQueue.Peek().Join();
 						taskQueue.Dequeue();
+						if (taskQueue.Count == 0) {
+							allTaskEndEvent();
+						}
 					}
 				}
 			}
@@ -76,12 +97,15 @@ namespace NIDaqInterfaceDummy{
 		public void doNextTask() {
 			lock (this) {
 				if (taskQueue.Count > 0) {
+					taskEndEvent();
 					taskQueue.Dequeue();
 				}
 				if (isRunning) {
 					if (taskQueue.Count == 0) {
 						isRunning = false;
+						allTaskEndEvent();
 					} else {
+						taskStartEvent();
 						taskQueue.Peek().Start();
 					}
 				}

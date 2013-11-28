@@ -31,6 +31,23 @@ namespace WpfTest {
 
 		// シーケンス
 		Sequences seq;
+
+		//繰り返し回数
+		public int repeatCount {
+			get {
+				try {
+					return int.Parse(Text_Repeat_Run.Text);
+				}catch(Exception){
+					return 1;
+				}
+			}
+		}
+		//繰り返しを有効にするかどうか
+		public bool IsRepeatEnable {
+			get {
+				return Check_Repeat_Run.IsChecked.Value;
+			}
+		}
 		
 		// コンストラクタ
 		public MainWindow() {
