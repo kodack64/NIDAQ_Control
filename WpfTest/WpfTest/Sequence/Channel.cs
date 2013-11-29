@@ -43,21 +43,30 @@ namespace NIDaqController {
 		}
 	
 		//チャンネルの名前
-		private TextBox Text_name;
-		public string name {
+		private TextBox Text_virtualName;
+		public string virtualName {
 			get {
-				return Text_name.Text;
+				return Text_virtualName.Text;
 			}
 		}
 
 		//チャンネルのデバイス
-		private ComboBox Combo_deviceName;
-		public string deviceName {
+		private ComboBox Combo_channelName;
+		public string channelName {
 			get {
-				return Combo_deviceName.Text;
+				return Combo_channelName.Text;
 			}
 			set {
-				Combo_deviceName.Text=value;
+				Combo_channelName.Text=value;
+			}
+		}
+		public string deviceName {
+			get{
+				try {
+					return channelName.Split('/')[0];
+				} catch (Exception) {
+					return "";
+				}
 			}
 		}
 
@@ -141,16 +150,16 @@ namespace NIDaqController {
 			panel = new StackPanel() { };
 
 			Text_rowIndex = new TextBlock() { Background=Brushes.Black , Foreground=Brushes.White };
-			Text_name = new TextBox() { Text = "IO " + uniqueId, Background = Brushes.LightGray, ContextMenu = new ContextMenu() };
+			Text_virtualName = new TextBox() { Text = "IO " + uniqueId, Background = Brushes.LightGray, ContextMenu = new ContextMenu() };
 //			Text_rowIndex.ContextMenuOpening += (object sender, ContextMenuEventArgs arg) => CheckContextMenuOfLabel();
 			uniqueId++;
 			ADCombo = new ComboBox() { };
 			ADCombo.Items.Add("Analog"); ADCombo.Items.Add("Digital");
 			IOCombo = new ComboBox() { };
 			IOCombo.Items.Add("Out"); IOCombo.Items.Add("In");
-			Combo_deviceName = new ComboBox() { };
+			Combo_channelName = new ComboBox() { };
 			foreach (string str in TaskManager.GetInstance().getAnalogOutputList()) {
-				Combo_deviceName.Items.Add(str);
+				Combo_channelName.Items.Add(str);
 			}
 			Text_minVoltage = new TextBox() { Text = "-1" , Width=40};
 			Text_minVoltage.TextChanged += (s, e) => repaint();
@@ -158,14 +167,14 @@ namespace NIDaqController {
 			Text_maxVoltage.TextChanged += (s, e) => repaint();
 
 			panel.Children.Add(Text_rowIndex);
-			panel.Children.Add(Text_name);
+			panel.Children.Add(Text_virtualName);
 			{
 				StackPanel miniStack = new StackPanel() { Orientation = Orientation.Horizontal };
 				miniStack.Children.Add(ADCombo);
 				miniStack.Children.Add(IOCombo);
 				panel.Children.Add(miniStack);
 			}
-			panel.Children.Add(Combo_deviceName);
+			panel.Children.Add(Combo_channelName);
 			{
 				StackPanel miniStack = new StackPanel() { Orientation = Orientation.Horizontal };
 				miniStack.Children.Add(Text_minVoltage);
@@ -189,7 +198,7 @@ namespace NIDaqController {
 		//チャンネルラベルのコンテキストメニュー表示
 		public void CheckContextMenuOfLabel() {
 			Text_rowIndex.ContextMenu.Items.Clear();
-			Text_rowIndex.ContextMenu.Items.Add(new MenuItem() { Header = String.Format("{0} {1} - {2}",ADCombo.Text,IOCombo.Text,deviceName) , IsEnabled=false});
+			Text_rowIndex.ContextMenu.Items.Add(new MenuItem() { Header = String.Format("{0} {1} - {2}",ADCombo.Text,IOCombo.Text,channelName) , IsEnabled=false});
 			Text_rowIndex.ContextMenu.Items.Add(new MenuItem() { Header = String.Format("Voltage {0}V-{1}V", minVoltage,maxVoltage), IsEnabled = false });
 			int myRow = rowIndex;
 
@@ -221,7 +230,7 @@ namespace NIDaqController {
 			clickedColumn = (int)(Mouse.GetPosition(canvas).X / Division.width);
 
 			canvas.ContextMenu.Items.Clear();
-			item = new MenuItem() { Header =name + " - " + parent.getDivisionName(clickedColumn) , IsEnabled=false};
+			item = new MenuItem() { Header =virtualName + " - " + parent.getDivisionName(clickedColumn) , IsEnabled=false};
 			canvas.ContextMenu.Items.Add(item);
 
 			canvas.ContextMenu.Items.Add(new Separator());
@@ -264,12 +273,12 @@ namespace NIDaqController {
 		}
 		//チャンネル情報の編集
 		public void editChannel() {
-			EditIOWindow window = new EditIOWindow(isAnalog,isOutput,deviceName,minVoltage,maxVoltage);
+			EditIOWindow window = new EditIOWindow(isAnalog,isOutput,channelName,minVoltage,maxVoltage);
 			window.ShowDialog();
 			if (window.isOk) {
 				isAnalog = window.resultIsAnalog;
 				isOutput = window.resultIsOutput;
-				deviceName = window.resultBindedName;
+				channelName = window.resultBindedName;
 				minVoltage = window.resultMinVoltage;
 				maxVoltage = window.resultMaxVoltage;
 			}
@@ -300,8 +309,8 @@ namespace NIDaqController {
 			string str="";
 			str += ADCombo.SelectedIndex + separator;
 			str += IOCombo.SelectedIndex + separator;
-			str += Combo_deviceName.Text + separator;
-			str += Text_name.Text + separator;
+			str += Combo_channelName.Text + separator;
+			str += Text_virtualName.Text + separator;
 			str += Text_rowIndex.Text + separator;
 			str += Text_minVoltage.Text + separator;
 			str += Text_maxVoltage.Text + separator;
@@ -316,8 +325,8 @@ namespace NIDaqController {
 			string[] strs = str.Trim().Split(separator.ToCharArray());
 			ADCombo.SelectedIndex = int.Parse(strs[0]);
 			IOCombo.SelectedIndex = int.Parse(strs[1]);
-			Combo_deviceName.Text = strs[2];
-			Text_name.Text = strs[3];
+			Combo_channelName.Text = strs[2];
+			Text_virtualName.Text = strs[3];
 			Text_rowIndex.Text = strs[4];
 			Text_minVoltage.Text = strs[5];
 			Text_maxVoltage.Text = strs[6];

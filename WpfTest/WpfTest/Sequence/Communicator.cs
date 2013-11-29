@@ -43,38 +43,11 @@ namespace NIDaqController{
 		public void Run() {
 
 			Sequence current = seq.getCurrentSequence();
-			sampleRate = current.samleRate;
-
-			current.compile(sampleRate);
-
-			convert();
-		}
-		public void convert(){
-			int aochan = current.getEnabledChannelCount();
-			long sampleSum = current.getSequenceSampleCount(sampleRate);
-			string[] nameList = new string[aochan];
-			double[,] waveArray = new double[aochan, sampleSum];
-			double[,] minmaxVoltage = new double[aochan, 2];
-
-			int aoCount = 0;
-			long sampleCount = 0;
-			for (int ci = 0; ci < current.getChannelCount(); ci++) {
-				if (current.getIsAnalog(ci) && current.getIsOutput(ci) && current.getIsBinded(ci)) {
-					sampleCount = 0;
-					for (int di = 0; di + 1 < current.getDivisionCount(); di++) {
-						nameList[ci] = current.getBindedName(ci);
-						minmaxVoltage[ci, 0] = current.getMinVoltage(ci);
-						minmaxVoltage[ci, 1] = current.getMaxVoltage(ci);
-						double[] channelWave = current.getWave(ci, di);
-						for (int j = 0; j < channelWave.Length; j++) {
-							waveArray[aoCount, sampleCount] = channelWave[j];
-							sampleCount++;
-						}
-					}
-					aoCount++;
-				}
+			current.compile();
+			foreach(TaskAssemble ta in current.taskAsm){
+				taskManager.popTask(current.sampleRate,ta.deviceName,ta.channelNames,ta.minVoltage,ta.maxVoltage,ta.waves);
 			}
-
+			taskManager.start();
 		}
 
 		//停止

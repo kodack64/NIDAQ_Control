@@ -120,4 +120,11 @@ namespace NIDaqController {
 		Hold,
 		Linear
 	}
+	public static class NodeTypeExt {
+		public static double getFuncValue(this NodeType type, double left, double right,double pos) {
+			if (type == NodeType.Hold) return left;
+			if (type == NodeType.Linear) return left + (right - left) * pos;
+			else return 0;
+		}
+	}
 }

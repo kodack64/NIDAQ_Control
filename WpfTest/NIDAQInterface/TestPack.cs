@@ -8,24 +8,40 @@ namespace NIDaqInterface {
 	class TaskPack {
 		double[,] waveArray;
 		string[] channelNameArray;
-		Task task;
+		List<string> deviceName = new List<string>();
+		Task[] task;
 
 		AnalogMultiChannelWriter aowriter;
 		public TaskPack(string[] _name, double[,] _wave, double sampleRate, double[,] minmaxVoltage, TaskDoneEventHandler done) {
 			waveArray = _wave;
 			channelNameArray = _name;
-			task = new Task();
 
-			for (int i = 0; i < channelNameArray.Length; i++) {
-				string name = channelNameArray[i];
-				string vname = "Voltage" + i;
-				task.AOChannels.CreateVoltageChannel(name, vname, minmaxVoltage[i, 0], minmaxVoltage[i, 1], AOVoltageUnits.Volts);
+			deviceName.Clear();
+			for (int i = 0; i < channelNameArray; i++) {
+				string[] spstr = channelNameArray[i].Split('/');
+				if (deviceName.Count((n) => (n == spstr[0]))>0) {
+					deviceName.Add(spstr[0]);
+				}
 			}
 
-			task.Timing.ConfigureSampleClock("", sampleRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, waveArray.GetLength(1));
-			task.Done += done;
-			task.Control(TaskAction.Verify);
-			aowriter = new AnalogMultiChannelWriter(task.Stream);
+			task = new Task[deviceName.Count];
+
+			for (int i = 0; i < task.Length; i++) {
+				task[i] = new Task();
+
+				for (int ch = 0; ch < channelNameArray.Length; ch++) {
+					string name = channelNameArray[ch];
+					if (name.Split('/')[0] == deviceName[i]) {
+						string vname = "Voltage" + i;
+						task[i].AOChannels.CreateVoltageChannel(name, vname, minmaxVoltage[ch, 0], minmaxVoltage[ch, 1], AOVoltageUnits.Volts);
+					}
+				}
+
+				task[i].Timing.ConfigureSampleClock("", sampleRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, waveArray.GetLength(1));
+				task[i].Done += done;
+				task[i].Control(TaskAction.Verify);
+				aowriter = new AnalogMultiChannelWriter(task[i].Stream);
+			}
 		}
 		public void execute() {
 			aowriter.WriteMultiSample(false, waveArray);

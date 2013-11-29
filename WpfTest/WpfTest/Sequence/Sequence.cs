@@ -14,7 +14,16 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace NIDaqController{
+
+public class TaskAssemble {
+	public string deviceName;
+	public string[] channelNames;
+	public double[,] waves;
+	public double[] maxVoltage;
+	public double[] minVoltage;
+}
+
+namespace NIDaqController {
 
 	//単一のシーケンス
     public class Sequence{
@@ -23,8 +32,6 @@ namespace NIDaqController{
         private List<Channel> channels = new List<Channel>();
 		//区間
 		private List<Division> divisions = new List<Division>();
-		//波形
-		private List<List<double[]>> waves;
 		//描画先グリッド
 		private Grid bindedGrid;
 		//シーケンス名
@@ -39,7 +46,7 @@ namespace NIDaqController{
 		}
 		//サンプルレート
 		private TextBox textSampleRate;
-		public double samleRate {
+		public double sampleRate {
 			get {
 				try {
 					return double.Parse(textSampleRate.Text);
@@ -59,7 +66,6 @@ namespace NIDaqController{
 			Division lastDivision = new Division(this);
 			lastDivision.isLast = true;
 			divisions.Add(lastDivision);
-			waves = new List<List<double[]>>();
 			textSequenceName = new TextBox() { Text="Sequence"+uniqueId};
 			textSampleRate = new TextBox() { Text="1000"};
 			uniqueId++;
@@ -67,79 +73,87 @@ namespace NIDaqController{
 		public void addAllAnalogOutput(){
 			foreach(string str in TaskManager.GetInstance().getAnalogOutputList()){
 				insertChannel(channels.Count);
-				setBindedName(channels.Count - 1,str);
+				setBindedChannelName(channels.Count - 1,str);
 				channels[channels.Count - 1].isAnalog=true;
 				channels[channels.Count - 1].isOutput=true;
 			}
 		}
 
+		public List<TaskAssemble> taskAsm = new List<TaskAssemble>();
+
 		////////////////波形成性
 		//現在のシーケンスから波形を生成
-		public void compile(double sampleRate) {			
+		public void compile() {
 			DebugWindow.Write("シーケンスから信号を作成...");
-			waves.Clear();
-			for (int ci = 0; ci < channels.Count; ci++) {
-				List<double[]> channelWave = new List<double[]>();
 
-				Channel ch = channels[ci];
-				for (int di = 0; di+1 < divisions.Count; di++) {
-					long sampleNum = this.getDivisionSampleCount(di,sampleRate);
-					double[] wave = new double[sampleNum];
-					Node Node = ch.nodes[di];
-					Node nextPlot = ch.nodes[di+1];
-
-					if (Node.type == NodeType.Hold) {
-						for (int i = 0; i < sampleNum; i++) {
-							wave[i] = Node.value;
+			taskAsm.Clear();
+			List<string> deviceList = getEnabledDeviceList();
+			int divisionCount = divisions.Count;
+			for (int i = 0; i < deviceList.Count(); i++) {
+				TaskAssemble ta = new TaskAssemble();
+				ta.deviceName = deviceList[i];
+				List<Channel> chs = channels.FindAll( (ch)=>ch.deviceName==ta.deviceName);
+				long sampleCount = this.getSequenceSampleCount();
+				int channelCount = chs.Count;
+				ta.channelNames = new string[channelCount];
+				ta.maxVoltage = new double[channelCount];
+				ta.minVoltage = new double[channelCount];
+				ta.waves = new double[channelCount,sampleCount];
+				for (int ci = 0; ci < channelCount; ci++) {
+					ta.channelNames[ci] = chs[ci].channelName;
+					ta.minVoltage[ci] = chs[ci].minVoltage;
+					ta.maxVoltage[ci] = chs[ci].maxVoltage;
+					long offset = 0;
+					for (int di = 0; di+1 < divisionCount; di++) {
+						long divisionSample = getDivisionSampleCount(di);
+						NodeType type = chs[ci].nodes[di].type;
+						double current = chs[ci].nodes[di].value;
+						double next = chs[ci].nodes[di + 1].value;
+						if (type == NodeType.Hold) {
+							for (int si = 0; si < divisionSample; si++) {
+								ta.waves[ci, offset + si] = current;
+							}
+						} else if (type == NodeType.Linear) {
+							double val = current;
+							double step = (next - current) / divisionSample;
+							for (int si = 0; si < divisionSample; si++) {
+								ta.waves[ci, offset + si] = val;
+								val += (next - current)/ step;
+							}
 						}
-					} else if (Node.type == NodeType.Linear) {
-						for (int i = 0; i < sampleNum; i++) {
-							wave[i] = Node.value + (nextPlot.value - Node.value)*i / sampleNum;
-						}
-					} else {
-						for(int i=0;i<sampleNum;i++){
-							wave[i] = Node.value;
-						}
+						offset += divisionSample;
 					}
-					channelWave.Add(wave);
 				}
-				waves.Add(channelWave);
+				taskAsm.Add(ta);
 			}
 			DebugWindow.WriteLine("OK");
 			DebugWindow.WriteLine(" サンプルレート	:" + sampleRate);
 			DebugWindow.WriteLine(" シーケンス時間	:" + getSequenceTime());
-			DebugWindow.WriteLine(" サンプル数	:" + getSequenceSampleCount(sampleRate));
-			DebugWindow.WriteLine(" 通信量	:" + getSequenceSampleCount(sampleRate)*sizeof(double)*getEnabledChannelCount()*1e-6+"MByte");
+			DebugWindow.WriteLine(" サンプル数	:" + getSequenceSampleCount());
+			DebugWindow.WriteLine(" 通信量	:" + getSequenceSampleCount()*sizeof(double)*getEnabledChannelCount()*1e-6+"MByte");
 		}
-		//前回生成した波形を取得
-		public double[] getWave(int channelIndex,int divisionIndex) {
-			return waves[channelIndex][divisionIndex];
-		}
-
 
 		////////////////情報取得
 		//divisionごとのサンプル数を取得
-		public long getDivisionSampleCount(int divisionIndex,double sampleRate) {
+		public long getDivisionSampleCount(int divisionIndex) {
 			return (long)(divisions[divisionIndex].time*sampleRate);
 		}
 		//シーケンス全体のサンプル数を取得
-		public long getSequenceSampleCount(double sampleRate) {
+		public long getSequenceSampleCount() {
 			long sum = 0;
 			for (int i = 0; i < divisions.Count; i++) {
-				sum += getDivisionSampleCount(i, sampleRate);
+				sum += getDivisionSampleCount(i);
 			}
 			return sum;
 		}
 		//divisionの時間を取得
-		public double getDivisionTime(int index) {
-			return divisions[index].time;
+		public double getDivisionTime(int divisionIndex) {
+			return divisions[divisionIndex].time;
 		}
 		//シーケンス全体の時間を取得
 		public double getSequenceTime() {
 			double sum = 0;
-			foreach (Division div in divisions) {
-				sum += div.time;
-			}
+			divisions.ForEach((div) => { sum += div.time; });
 			return sum;
 		}
 		//チャンネル数の取得
@@ -148,21 +162,31 @@ namespace NIDaqController{
 		}
 		//有効なチャンネル数を取得
 		public int getEnabledChannelCount() {
-			int count = 0;
-			for(int i=0;i<channels.Count;i++){
-				if (channels[i].isAnalog && channels[i].isOutput && channels[i].deviceName.Length > 0) {
-					count++;
-				}
-			}
-			return count;
+			return channels.Count((ch) => ch.isAnalog && ch.isOutput && ch.channelName.Length > 0);
 		}
-		//チャンネルの担当デバイスを取得
-		public string getBindedName(int channelIndex) {
+		//有効なデバイス数を取得
+		public int getEnabledDeviceCount() {
+			List<string> devs = new List<string>();
+			channels.ForEach(ch => { if (devs.Count(dev => dev == ch.deviceName) > 0)devs.Add(ch.deviceName); });
+			return devs.Count();
+		}
+		//有効なデバイスのリストを取得
+		public List<string> getEnabledDeviceList() {
+			List<string> devs = new List<string>();
+			channels.ForEach(ch => { if (devs.Count(dev => dev == ch.deviceName) == 0)devs.Add(ch.deviceName); });
+			return devs;
+		}
+		//チャンネルの担当チャンネル名を取得
+		public string getBindedChannelName(int channelIndex) {
+			return channels[channelIndex].channelName;
+		}
+		//チャンネルの所属デバイス名を取得
+		public string getBindedDeviceName(int channelIndex) {
 			return channels[channelIndex].deviceName;
 		}
-		//チャンネルの担当デバイスを指定
-		private void setBindedName(int channelIndex,string deviceName) {
-			channels[channelIndex].deviceName=deviceName;
+		//チャンネルの担当チャンネルを指定
+		private void setBindedChannelName(int channelIndex,string channelName) {
+			channels[channelIndex].channelName=channelName;
 		}
 		//divisionの数の取得
 		public int getDivisionCount() {
@@ -174,7 +198,7 @@ namespace NIDaqController{
 		}
 		//指定インデックスのチャンネルがデバイスに接続されているか
 		public bool getIsBinded(int index) {
-			return channels[index].deviceName.Length > 0;
+			return channels[index].channelName.Length > 0;
 		}
 		//指定インデックスのチャンネルが出力化どうか
 		public bool getIsOutput(int index) {
@@ -190,7 +214,7 @@ namespace NIDaqController{
 		}
 		//チャンネル名を取得
 		public string getChannelName(int index) {
-			return channels[index].name;
+			return channels[index].virtualName;
 		}
 		//division名を取得
 		public string getDivisionName(int index) {

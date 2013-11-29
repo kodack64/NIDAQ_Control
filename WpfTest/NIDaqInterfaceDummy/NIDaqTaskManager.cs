@@ -14,6 +14,7 @@ namespace NIDaqInterfaceDummy{
 		public event TaskEvent allTaskEndEvent = delegate { };
 		public event TaskEvent taskStartEvent = delegate { };
 
+		Thread taskThread;
 		private Queue <Thread> taskQueue = new Queue<Thread>();
 		private static NIDaqTaskManager myInstance;
 		bool isRunning;
@@ -45,63 +46,45 @@ namespace NIDaqInterfaceDummy{
 			return digitalOutputList;
 		}
 
-		public void popTask(double sampleRate, string[] channelNameArray, double[,] waveArray, double[,] minmaxVoltage) {			
+		public void popTask(double sampleRate, string deviceName,string[] channelName,double[] minVoltage,double[] maxVoltage,double[,]wave) {
+			waitTime = wave.GetLength(1)/sampleRate;
 			taskQueue.Enqueue(new Thread(this.dummyTask));
 		}
 
+		private double waitTime = 0;
 		private volatile bool stopped=false;
 		public void dummyTask() {
-			taskStartEvent();
 			stopped = false;
 			int count=0;
-			while (!stopped && count<100) {
-				Thread.Sleep(100);
+			while (!stopped && count<10) {
+				Thread.Sleep((int)((waitTime/10)*1000));
 				count++;
 			}
-			taskEndEvent();
-			if (!stopped) doNextTask();
 		}
-
-		public void start() {
+		public void executeAsync() {
+			taskStartEvent();
 			if (!isRunning) {
-				if (taskQueue.Count > 0) {
-					isRunning = true;
-					taskQueue.Peek().Start();
+				isRunning = true;
+				foreach (Thread task in taskQueue) {
+					task.Start();
 				}
+				foreach (Thread task in taskQueue) {
+					task.Join();
+					taskEndEvent();
+				}
+				taskQueue.Clear();
+				isRunning = false;
 			}
+			allTaskEndEvent();
+		}
+		public void start() {
+			taskThread = new Thread(new ThreadStart(executeAsync));
+			taskThread.Start();
 		}
 
 		public void stop() {
-			lock (this) {
-				if (isRunning) {
-				isRunning = false;
-					if (taskQueue.Count > 0) {
-						taskEndEvent();
-						stopped = true;
-						taskQueue.Peek().Join();
-						taskQueue.Dequeue();
-						if (taskQueue.Count == 0) {
-							allTaskEndEvent();
-						}
-					}
-				}
-			}
-		}
-		public void doNextTask() {
-			lock (this) {
-				if (taskQueue.Count > 0) {
-					taskQueue.Dequeue();
-				}
-				if (isRunning) {
-					if (taskQueue.Count == 0) {
-						isRunning = false;
-						allTaskEndEvent();
-					} else {
-						taskStartEvent();
-						taskQueue.Peek().Start();
-					}
-				}
-			}
+			stopped = true;
+			taskThread.Join();
 		}
 	}
 }
