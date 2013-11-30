@@ -60,6 +60,8 @@
     <Reference Include="Microsoft.Windows.Shell">
       <HintPath>..\WPF Shell Integraton Library v2-bin\Microsoft.Windows.Shell.dll</HintPath>
     </Reference>
+    <Reference Include="NationalInstruments.Controls, Version=13.0.45.242, Culture=neutral, PublicKeyToken=4febd62461bf11a4, processorArchitecture=MSIL" />
+    <Reference Include="nationalinstruments.controls.booleans, Version=13.0.40.242, Culture=neutral, PublicKeyToken=dc6ad606294fc298, processorArchitecture=MSIL" />
     <Reference Include="PresentationUI, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="ReachFramework" />
     <Reference Include="System" />
