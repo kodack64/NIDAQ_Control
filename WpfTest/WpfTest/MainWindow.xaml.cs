@@ -63,7 +63,7 @@ namespace WpfTest {
 			DebugWindow.WriteLine("シーケンス作成");
 			seq = new Sequences();
 			seq.getCurrentSequence().bindGridUI(SequenceGrid);
-			seq.getCurrentSequence().addAllAnalogOutput();
+//			seq.getCurrentSequence().addAllAnalogOutput();
 			communicator = new NIDaqCommunicator(seq);
 
 			//ウィンドウをどこでもつかめるように

@@ -16,6 +16,7 @@ namespace NIDaqInterface
 		public event TaskEvent taskStartEvent = delegate { };
 
 		private volatile Queue<TaskPack> taskQueue = new Queue<TaskPack>();
+		private volatile List<DeviceTaskPack> deviceTaskQueue = new List<DeviceTaskPack>();
 		private bool isRunning;
 		private static NIDaqTaskManager myInstance;
 
@@ -56,7 +57,51 @@ namespace NIDaqInterface
 				throw new Exception(e.Message) ;
 			}
 		}
-		public void execute() {
+
+		public void clearTask() {
+			stop();
+		}
+		public void initTask(string deviceName,double sampleRate) {
+			DeviceTaskPack deviceTask = new DeviceTaskPack(deviceName,sampleRate, (s, e) => doNextTask());
+			deviceTaskQueue.Add(deviceTask);
+		}
+		public void popTask(string[] channelName, double[] minVoltage, double[] maxVoltage, double[,] wave) {
+			try {
+				deviceTaskQueue[deviceTaskQueue.Count()-1].addAnalogChannels(channelName, minVoltage, maxVoltage, wave);
+			} catch (DaqException e) {
+				throw new Exception(e.Message);
+			}
+		}
+		public void popTask(string[] channelName, byte[,] bytes) {
+			try {
+				deviceTaskQueue[deviceTaskQueue.Count() - 1].addDigitalChannels(channelName, bytes);
+			} catch (DaqException e) {
+				throw new Exception(e.Message);
+			}
+		}
+		public void verify() {
+			deviceTaskQueue[deviceTaskQueue.Count() - 1].verify();
+		}
+
+		public void start() {
+			if (!isRunning) {
+				for (int i = 0; i < deviceTaskQueue.Count(); i++) {
+					deviceTaskQueue[i].execute();
+				}
+			}
+		}
+		public void stop() {
+			for (int i = 0; i < deviceTaskQueue.Count(); i++) {
+				deviceTaskQueue[i].stop();
+			}
+			isRunning = false;
+			deviceTaskQueue.Clear();
+		}
+		public void doNextTask() {
+		}
+
+		/*
+		public void start() {
 			if (!isRunning) {
 				if (taskQueue.Count > 0) {
 					isRunning = true;
@@ -84,5 +129,6 @@ namespace NIDaqInterface
 				}
 			}
 		}
+		 * */
 	}
 }

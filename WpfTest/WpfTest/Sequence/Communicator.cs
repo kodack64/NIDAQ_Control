@@ -44,8 +44,11 @@ namespace NIDaqController{
 
 			Sequence current = seq.getCurrentSequence();
 			current.compile();
+			taskManager.clearTask();
 			foreach(TaskAssemble ta in current.taskAsm){
-				taskManager.popTask(current.sampleRate,ta.deviceName,ta.channelNames,ta.minVoltage,ta.maxVoltage,ta.waves);
+				taskManager.initTask(ta.deviceName,current.sampleRate);
+				taskManager.popTask(ta.channelNames,ta.minVoltage,ta.maxVoltage,ta.waves);
+				taskManager.verify();
 			}
 			taskManager.start();
 		}

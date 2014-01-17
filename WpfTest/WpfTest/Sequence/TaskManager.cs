@@ -5,8 +5,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-//using NIDAQInterface;
-using NIDaqInterfaceDummy;
+using NIDaqInterface;
+//using NIDaqInterfaceDummy;
 
 namespace NIDaqController {
 	class TaskManager{
@@ -28,9 +28,24 @@ namespace NIDaqController {
 		public string[] getDigitalOutputList() {
 			return NIDaqTaskManager.GetInstance().getDigitalOutputList();
 		}
-		public void popTask(double sampleRate, string deviceName,string[] channelName,double[] minVoltage,double[] maxVoltage,double[,]wave) {
-			NIDaqTaskManager.GetInstance().popTask(sampleRate, deviceName,channelName,minVoltage,maxVoltage,wave);
+		public void clearTask() {
+			NIDaqTaskManager.GetInstance().clearTask();
 		}
+		public void initTask(string deviceName,double sampleRate) {
+			NIDaqTaskManager.GetInstance().initTask(deviceName, sampleRate);
+		}
+		public void popTask(string[] channelName,double[] minVoltage,double[] maxVoltage,double[,]wave) {
+			NIDaqTaskManager.GetInstance().popTask(channelName,minVoltage,maxVoltage,wave);
+		}
+		public void popTask(string[] channelName, byte[,] bytes) {
+			NIDaqTaskManager.GetInstance().popTask(channelName,bytes);
+		}
+		public void verify() {
+			NIDaqTaskManager.GetInstance().verify();
+		}
+//		public void popTask(double sampleRate, string[] channelNameArray, double[,] waveArray, double[,] minmaxVoltage) {
+//			NIDaqTaskManager.GetInstance().popTask(sampleRate,channelNameArray,waveArray,minmaxVoltage);
+//		}
 		public void start() {
 			NIDaqTaskManager.GetInstance().start();
 		}

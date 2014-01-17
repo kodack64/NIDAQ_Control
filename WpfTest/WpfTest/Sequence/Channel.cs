@@ -154,9 +154,12 @@ namespace NIDaqController {
 //			Text_rowIndex.ContextMenuOpening += (object sender, ContextMenuEventArgs arg) => CheckContextMenuOfLabel();
 			uniqueId++;
 			ADCombo = new ComboBox() { };
-			ADCombo.Items.Add("Analog"); ADCombo.Items.Add("Digital");
+			ADCombo.Items.Add("Analog"); ADCombo.Items.Add("Digital"); ADCombo.SelectedIndex = 0;
+			ADCombo.SelectionChanged += ((s, e) => updateItemList());
 			IOCombo = new ComboBox() { };
-			IOCombo.Items.Add("Out"); IOCombo.Items.Add("In");
+			IOCombo.Items.Add("Out"); IOCombo.Items.Add("In"); IOCombo.SelectedIndex = 0;
+			IOCombo.SelectionChanged += ((s, e) => updateItemList());
+			IOCombo.IsEnabled = false;
 			Combo_channelName = new ComboBox() { };
 			foreach (string str in TaskManager.GetInstance().getAnalogOutputList()) {
 				Combo_channelName.Items.Add(str);
@@ -194,6 +197,32 @@ namespace NIDaqController {
 			canvas.ContextMenuOpening += (object sender, ContextMenuEventArgs e) => CheckContextMenuOfCanvas();
 			repaintValueBoxes();
 		}
+
+		public void updateItemList() {
+			Combo_channelName.Items.Clear();
+			if (ADCombo.Text == "Analog") {
+				if (IOCombo.Text == "Out") {
+					foreach (string str in TaskManager.GetInstance().getAnalogOutputList()) {
+						Combo_channelName.Items.Add(str);
+					}
+				} else {
+					foreach (string str in TaskManager.GetInstance().getAnalogInputList()) {
+						Combo_channelName.Items.Add(str);
+					}
+				}
+			} else {
+				if (IOCombo.Text == "Out") {
+					foreach (string str in TaskManager.GetInstance().getDigitalOutputList()) {
+						Combo_channelName.Items.Add(str);
+					}
+				} else {
+					foreach (string str in TaskManager.GetInstance().getDigitalInputList()) {
+						Combo_channelName.Items.Add(str);
+					}
+				}
+			}
+		}
+
 
 		//チャンネルラベルのコンテキストメニュー表示
 		public void CheckContextMenuOfLabel() {
