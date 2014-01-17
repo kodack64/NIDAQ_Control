@@ -188,9 +188,9 @@ namespace NIDaqController {
 			}
 
 			for (int i = 0; i < divisionCount - 1; i++) {
-				nodes.Add(new Node(this) { index = 0, value = 0, type = NodeType.Hold, isEnd = false });
+				nodes.Add(new Node(this) { index = i, value = 0, type = NodeType.Hold, isEnd = false });
 			}
-			nodes.Add(new Node(this) { index = 0, value = 0, type = NodeType.Hold, isEnd = true });
+			nodes.Add(new Node(this) { index = divisionCount-1, value = 0, type = NodeType.Hold, isEnd = true });
 
 			canvas = new Canvas() { Background = Brushes.White, ContextMenu = new ContextMenu() };
 			canvas.SetValue(Grid.ColumnSpanProperty, divisionCount);
