@@ -200,8 +200,8 @@ namespace NIDaqController {
 
 		public void updateItemList() {
 			Combo_channelName.Items.Clear();
-			if (ADCombo.Text == "Analog") {
-				if (IOCombo.Text == "Out") {
+			if (ADCombo.SelectedIndex == 0) {
+				if (IOCombo.SelectedIndex==0) {
 					foreach (string str in TaskManager.GetInstance().getAnalogOutputList()) {
 						Combo_channelName.Items.Add(str);
 					}
@@ -211,7 +211,7 @@ namespace NIDaqController {
 					}
 				}
 			} else {
-				if (IOCombo.Text == "Out") {
+				if (IOCombo.SelectedIndex == 0) {
 					foreach (string str in TaskManager.GetInstance().getDigitalOutputList()) {
 						Combo_channelName.Items.Add(str);
 					}

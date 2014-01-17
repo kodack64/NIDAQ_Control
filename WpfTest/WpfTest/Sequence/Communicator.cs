@@ -13,8 +13,6 @@ namespace NIDaqController{
 
 		private delegate void taskEndEvent();
 
-		private const long defaultSampleRate = (long)2.5e6;
-
 		public bool isRepeatEnabled;
 		public int repeatCount;
 		private int currentRepeatCount;
@@ -25,13 +23,9 @@ namespace NIDaqController{
 		//タスク管理
 		private TaskManager taskManager;
 
-		//サンプルレート
-		private double sampleRate;
-
 		//コンストラクタ
 		public NIDaqCommunicator(Sequences _seq) {
 			seq = _seq;
-			sampleRate = defaultSampleRate;
 			taskManager = TaskManager.GetInstance();
 			taskManager.addTaskEndEventHandler(TaskEnd);
 			repeatCount = 0;
@@ -41,14 +35,44 @@ namespace NIDaqController{
 
 		//現在のシーケンスからタスクを生成しキューに入れる
 		public void Run() {
-
+			currentRepeatCount = 0;
+			if (seq.getCurrentSequence().getDivisionCount() <= 1){
+				DebugWindow.WriteLine("オペレーションが空です。");
+				MainWindow.myInstance.Dispatcher.BeginInvoke(
+					new Action(() => { MainWindow.myInstance.Callback_SystemStop(); })
+					);
+			} else if(seq.getCurrentSequence().getChannelCount() == 0) {
+				DebugWindow.WriteLine("IOが空です。");
+				MainWindow.myInstance.Dispatcher.BeginInvoke(
+					new Action(() => { MainWindow.myInstance.Callback_SystemStop(); })
+					);
+			}else{
+				doTask();
+			}
+		}
+		private void doTask() {
 			Sequence current = seq.getCurrentSequence();
 			current.compile();
 			taskManager.clearTask();
-			foreach(TaskAssemble ta in current.taskAsm){
-				taskManager.initTask(ta.deviceName,current.sampleRate);
-				taskManager.popTask(ta.channelNames,ta.minVoltage,ta.maxVoltage,ta.waves);
-				taskManager.verify();
+			taskManager.setRepeatFlag(isRepeatEnabled);
+			if (current.taskAsm.Count() == 0) {
+				DebugWindow.WriteLine("有効なチャンネルがありません。");
+				MainWindow.myInstance.Dispatcher.BeginInvoke(
+					new Action(() => { MainWindow.myInstance.Callback_SystemStop(); })
+					);
+				return;
+			}
+			foreach (TaskAssemble ta in current.taskAsm) {
+				if (ta.analogChannelNames.Count() > 0) {
+					taskManager.initTask(ta.deviceName, current.sampleRate, current.getSequenceSampleCount());
+					taskManager.popTask(ta.analogChannelNames, ta.minVoltage, ta.maxVoltage, ta.waves);
+					taskManager.verify();
+				}
+				if (ta.digitalChannelNames.Count() > 0) {
+					taskManager.initTask(ta.deviceName, current.sampleRate, current.getSequenceSampleCount());
+					taskManager.popTask(ta.digitalChannelNames, ta.digis);
+					taskManager.verify();
+				}
 			}
 			taskManager.start();
 		}
@@ -61,10 +85,11 @@ namespace NIDaqController{
 
 		//最新タスクが終了
 		public void TaskEnd() {
-			if (isRepeatEnabled && currentRepeatCount<repeatCount) {
-				MainWindow.myInstance.Dispatcher.BeginInvoke(
-					new Action(() => { Run(); })
-					);
+			currentRepeatCount++;
+			if (isRepeatEnabled && currentRepeatCount < repeatCount) {
+				MainWindow.myInstance.Dispatcher.BeginInvoke(new Action(() => { doTask(); }));
+			} else {
+				MainWindow.myInstance.Dispatcher.BeginInvoke(new Action(() => { MainWindow.myInstance.Callback_SystemStop(); }));
 			}
 		}
 	}

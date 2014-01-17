@@ -139,7 +139,7 @@ namespace WpfTest {
 		}
 
 		//終了のコールバック
-		private void Callback_SystemStop() {
+		public void Callback_SystemStop() {
 			Button_Run.Dispatcher.BeginInvoke(
 				new Action(() => 
 				{

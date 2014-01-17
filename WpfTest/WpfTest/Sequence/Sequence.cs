@@ -17,8 +17,10 @@ using System.Windows.Shapes;
 
 public class TaskAssemble {
 	public string deviceName;
-	public string[] channelNames;
+	public string[] analogChannelNames;
+	public string[] digitalChannelNames;
 	public double[,] waves;
+	public uint[,] digis;
 	public double[] maxVoltage;
 	public double[] minVoltage;
 }
@@ -91,24 +93,33 @@ namespace NIDaqController {
 			int divisionCount = divisions.Count;
 			for (int i = 0; i < deviceList.Count(); i++) {
 				TaskAssemble ta = new TaskAssemble();
-				ta.deviceName = deviceList[i];
-				List<Channel> chs = channels.FindAll( (ch)=>ch.deviceName==ta.deviceName);
 				long sampleCount = this.getSequenceSampleCount();
-				int channelCount = chs.Count;
-				ta.channelNames = new string[channelCount];
-				ta.maxVoltage = new double[channelCount];
-				ta.minVoltage = new double[channelCount];
-				ta.waves = new double[channelCount,sampleCount];
-				for (int ci = 0; ci < channelCount; ci++) {
-					ta.channelNames[ci] = chs[ci].channelName;
-					ta.minVoltage[ci] = chs[ci].minVoltage;
-					ta.maxVoltage[ci] = chs[ci].maxVoltage;
+
+				ta.deviceName = deviceList[i];
+
+				List<Channel> analogChannels = channels.FindAll((ch) => ch.deviceName == ta.deviceName && ch.isAnalog);
+				List<Channel> digitalChannels = channels.FindAll( (ch) => ch.deviceName == ta.deviceName  && !ch.isAnalog);
+				int analogChannelCount = analogChannels.Count();
+				int digitalChannelCount = digitalChannels.Count();
+
+				ta.analogChannelNames = new string[analogChannelCount];
+				ta.maxVoltage = new double[analogChannelCount];
+				ta.minVoltage = new double[analogChannelCount];
+				ta.waves = new double[analogChannelCount, sampleCount];
+	
+				ta.digitalChannelNames = new string[digitalChannelCount];
+				ta.digis = new uint[digitalChannelCount, sampleCount];
+
+				for (int ci = 0; ci < analogChannelCount; ci++) {
+					ta.analogChannelNames[ci] = analogChannels[ci].channelName;
+					ta.minVoltage[ci] = analogChannels[ci].minVoltage;
+					ta.maxVoltage[ci] = analogChannels[ci].maxVoltage;
 					long offset = 0;
 					for (int di = 0; di+1 < divisionCount; di++) {
 						long divisionSample = getDivisionSampleCount(di);
-						NodeType type = chs[ci].nodes[di].type;
-						double current = chs[ci].nodes[di].value;
-						double next = chs[ci].nodes[di + 1].value;
+						NodeType type = analogChannels[ci].nodes[di].type;
+						double current = analogChannels[ci].nodes[di].value;
+						double next = analogChannels[ci].nodes[di + 1].value;
 						if (type == NodeType.Hold) {
 							for (int si = 0; si < divisionSample; si++) {
 								ta.waves[ci, offset + si] = current;
@@ -118,8 +129,21 @@ namespace NIDaqController {
 							double step = (next - current) / divisionSample;
 							for (int si = 0; si < divisionSample; si++) {
 								ta.waves[ci, offset + si] = val;
-								val += (next - current)/ step;
+								val += step;
 							}
+						}
+						offset += divisionSample;
+					}
+				}
+
+				for (int ci = 0; ci < digitalChannelCount; ci++) {
+					ta.digitalChannelNames[ci] = digitalChannels[ci].channelName;
+					long offset=0;
+					for(int di=0;di+1<divisionCount;di++){
+						long divisionSample = getDivisionSampleCount(di);
+						double value = digitalChannels[ci].nodes[di].value;
+						for (int si = 0; si < divisionSample; si++) {
+							ta.digis[ci, offset + si] = (byte)(value>0?1:0);
 						}
 						offset += divisionSample;
 					}
@@ -128,6 +152,7 @@ namespace NIDaqController {
 			}
 			DebugWindow.WriteLine("OK");
 			DebugWindow.WriteLine(" サンプルレート	:" + sampleRate);
+			DebugWindow.WriteLine(" 使用デバイス数 :" + deviceList.Count());
 			DebugWindow.WriteLine(" シーケンス時間	:" + getSequenceTime());
 			DebugWindow.WriteLine(" サンプル数	:" + getSequenceSampleCount());
 			DebugWindow.WriteLine(" 通信量	:" + getSequenceSampleCount()*sizeof(double)*getEnabledChannelCount()*1e-6+"MByte");
@@ -135,12 +160,12 @@ namespace NIDaqController {
 
 		////////////////情報取得
 		//divisionごとのサンプル数を取得
-		public long getDivisionSampleCount(int divisionIndex) {
-			return (long)(divisions[divisionIndex].time*sampleRate);
+		public int getDivisionSampleCount(int divisionIndex) {
+			return (int)(divisions[divisionIndex].time*sampleRate);
 		}
 		//シーケンス全体のサンプル数を取得
-		public long getSequenceSampleCount() {
-			long sum = 0;
+		public int getSequenceSampleCount() {
+			int sum = 0;
 			for (int i = 0; i < divisions.Count; i++) {
 				sum += getDivisionSampleCount(i);
 			}
@@ -173,7 +198,7 @@ namespace NIDaqController {
 		//有効なデバイスのリストを取得
 		public List<string> getEnabledDeviceList() {
 			List<string> devs = new List<string>();
-			channels.ForEach(ch => { if (devs.Count(dev => dev == ch.deviceName) == 0)devs.Add(ch.deviceName); });
+			channels.ForEach(ch => { if (devs.Count(dev => (dev == ch.deviceName)) == 0 && ch.deviceName.Length>0)devs.Add(ch.deviceName); });
 			return devs;
 		}
 		//チャンネルの担当チャンネル名を取得

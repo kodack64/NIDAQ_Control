@@ -31,14 +31,14 @@ namespace NIDaqController {
 		public void clearTask() {
 			NIDaqTaskManager.GetInstance().clearTask();
 		}
-		public void initTask(string deviceName,double sampleRate) {
-			NIDaqTaskManager.GetInstance().initTask(deviceName, sampleRate);
+		public void initTask(string deviceName,double sampleRate,int sampleLength) {
+			NIDaqTaskManager.GetInstance().initTask(deviceName, sampleRate,sampleLength);
 		}
 		public void popTask(string[] channelName,double[] minVoltage,double[] maxVoltage,double[,]wave) {
 			NIDaqTaskManager.GetInstance().popTask(channelName,minVoltage,maxVoltage,wave);
 		}
-		public void popTask(string[] channelName, byte[,] bytes) {
-			NIDaqTaskManager.GetInstance().popTask(channelName,bytes);
+		public void popTask(string[] channelName, uint[,] digis) {
+			NIDaqTaskManager.GetInstance().popTask(channelName,digis);
 		}
 		public void verify() {
 			NIDaqTaskManager.GetInstance().verify();
@@ -60,6 +60,9 @@ namespace NIDaqController {
 		}
 		public void addAllTaskEndEventHandler(Action func) {
 			NIDaqTaskManager.GetInstance().allTaskEndEvent += () => func();
+		}
+		public void setRepeatFlag(bool flag) {
+			NIDaqTaskManager.GetInstance().setRepeatFlag(flag);
 		}
 	}
 }
