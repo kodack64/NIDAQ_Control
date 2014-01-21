@@ -35,7 +35,8 @@ namespace NIDaqInterface {
 			for (int ch = 0; ch < channelNames.Length; ch++) {
 				string name = channelNames[ch];
 				string vname = "DO" + ch;
-				task.DOChannels.CreateChannel(name,vname,ChannelLineGrouping.OneChannelForAllLines);
+//				task.DOChannels.CreateChannel(name,vname,ChannelLineGrouping.OneChannelForAllLines);
+				task.DOChannels.CreateChannel(name, vname, ChannelLineGrouping.OneChannelForEachLine);
 			}
 			dowriter = new DigitalMultiChannelWriter(task.Stream);
 		}

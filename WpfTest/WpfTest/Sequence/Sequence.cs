@@ -143,7 +143,7 @@ namespace NIDaqController {
 						long divisionSample = getDivisionSampleCount(di);
 						double value = digitalChannels[ci].nodes[di].value;
 						for (int si = 0; si < divisionSample; si++) {
-							ta.digis[ci, offset + si] = (byte)(value>0?1:0);
+							ta.digis[ci, offset + si] = (uint)(value>0?2:0);
 						}
 						offset += divisionSample;
 					}
