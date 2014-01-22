@@ -142,8 +142,10 @@ namespace NIDaqController {
 					for(int di=0;di+1<divisionCount;di++){
 						long divisionSample = getDivisionSampleCount(di);
 						double value = digitalChannels[ci].nodes[di].value;
+						string[] namespl = digitalChannels[ci].channelName.Split("line".ToCharArray());
+						int linenum = int.Parse(namespl[namespl.Count()-1]);
 						for (int si = 0; si < divisionSample; si++) {
-							ta.digis[ci, offset + si] = (uint)(value>0?2:0);
+							ta.digis[ci, offset + si] = (uint)(value>0?1<<linenum:0);
 						}
 						offset += divisionSample;
 					}

@@ -19,7 +19,7 @@ namespace NIDaqController {
 	public class Division {
 
 		//自身の幅
-		public static readonly int width = 120;
+		public static readonly int width = 140;
 		//生成インデックス
 		private static int uniqueId = 0;
 
