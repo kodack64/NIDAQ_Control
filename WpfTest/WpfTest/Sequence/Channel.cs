@@ -151,7 +151,7 @@ namespace NIDaqController {
 
 			Text_rowIndex = new TextBlock() { Background=Brushes.Black , Foreground=Brushes.White };
 			Text_virtualName = new TextBox() { Text = "IO " + uniqueId, Background = Brushes.LightGray, ContextMenu = new ContextMenu() };
-//			Text_rowIndex.ContextMenuOpening += (object sender, ContextMenuEventArgs arg) => CheckContextMenuOfLabel();
+			Text_rowIndex.ContextMenuOpening += (object sender, ContextMenuEventArgs arg) => CheckContextMenuOfLabel();
 			uniqueId++;
 			ADCombo = new ComboBox() { };
 			ADCombo.Items.Add("Analog"); ADCombo.Items.Add("Digital"); ADCombo.SelectedIndex = 0;
@@ -210,6 +210,10 @@ namespace NIDaqController {
 						Combo_channelName.Items.Add(str);
 					}
 				}
+				minVoltage = -1;
+				maxVoltage = 1;
+				Text_minVoltage.IsEnabled = true;
+				Text_maxVoltage.IsEnabled = true;
 			} else {
 				if (IOCombo.SelectedIndex == 0) {
 					foreach (string str in TaskManager.GetInstance().getDigitalOutputList()) {
@@ -220,6 +224,10 @@ namespace NIDaqController {
 						Combo_channelName.Items.Add(str);
 					}
 				}
+				minVoltage = 0;
+				maxVoltage = 1;
+				Text_minVoltage.IsEnabled = false;
+				Text_maxVoltage.IsEnabled = false;
 			}
 		}
 
