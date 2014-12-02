@@ -150,6 +150,21 @@ namespace WpfTest {
 					}
 				})
 			);
+
+			// 波形を保存
+			for (int i = 0; i < TaskManager.GetInstance().getInputWaveDeviceCount(); i++) {
+				List<String> nameList = TaskManager.GetInstance().getInputWaveNameList(i);
+				double[,] dataArray =  TaskManager.GetInstance().getInputWaveArray(i);
+
+				for (int j = 0; j < Math.Min(nameList.Count, dataArray.GetLength(0)); j++) {
+					double[] data = new double[dataArray.GetLength(1)];
+					for (int k = 0; k < dataArray.GetLength(1); k++) {
+						data[k] = dataArray[j, k];
+					}
+					seq.getCurrentSequence().setWaveForm(nameList[j], data);
+				}
+			}
+			seq.getCurrentSequence().repaint();
 		}
 
 		// シーケンスファイルのロード

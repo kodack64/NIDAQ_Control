@@ -6,13 +6,18 @@ using NationalInstruments.DAQmx;
 
 namespace NIDaqInterface {
 	class DeviceTaskPack {
-		double[,] waveArray;
+		double[,] outputWaveArray;
+
+		public List<String> analogInputChannelNameList = new List<String>();
+		public double[,] inputWaveArray;
 		uint[,] byteArray;
 		double sampleRate;
 		string deviceName;
+		IAsyncResult readAsync;
 		Task task;
-		AnalogMultiChannelWriter aowriter;
-		DigitalMultiChannelWriter dowriter;
+		AnalogMultiChannelWriter aowriter = null;
+		DigitalMultiChannelWriter dowriter = null;
+		AnalogMultiChannelReader aireader = null;
 		int sampleLength;
 		public DeviceTaskPack(string _deviceName, double _sampleRate, int _sampleLength, TaskDoneEventHandler done) {
 			task = new Task();
@@ -21,8 +26,8 @@ namespace NIDaqInterface {
 			deviceName = _deviceName;
 			sampleLength = _sampleLength;
 		}
-		public void addAnalogChannels(string[] channelNames, double[] minVol, double[] maxVol, double[,] wave) {
-			waveArray = wave;
+		public void addAnalogOutputChannels(string[] channelNames, double[] minVol, double[] maxVol, double[,] wave) {
+			outputWaveArray = wave;
 			for (int ch = 0; ch < channelNames.Length; ch++) {
 				string name = channelNames[ch];
 				string vname = "Voltage" + ch;
@@ -30,7 +35,17 @@ namespace NIDaqInterface {
 			}
 			aowriter = new AnalogMultiChannelWriter(task.Stream);
 		}
-		public void addDigitalChannels(string[] channelNames,uint[,] digis) {
+		public void addAnalogInputChannels(string[] channelNames, double[] minVol, double[] maxVol) {
+			for (int ch = 0; ch < channelNames.Length; ch++) {
+				string name = channelNames[ch];
+				analogInputChannelNameList.Add(channelNames[ch]);
+				string vname = "VoltageIn" + ch;
+				task.AIChannels.CreateVoltageChannel(name, vname,AITerminalConfiguration.Differential, minVol[ch], maxVol[ch], AIVoltageUnits.Volts);
+			}
+			aireader = new AnalogMultiChannelReader(task.Stream);
+			aireader.SynchronizeCallbacks = false;
+		}
+		public void addDigitalOutputChannels(string[] channelNames, uint[,] digis) {
 			byteArray=digis;
 			for (int ch = 0; ch < channelNames.Length; ch++) {
 				string name = channelNames[ch];
@@ -42,7 +57,8 @@ namespace NIDaqInterface {
 		}
 		public void verify() {
 			task.Timing.ConfigureSampleClock("", sampleRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples,sampleLength);
-			if (aowriter != null && waveArray != null) aowriter.WriteMultiSample(false, waveArray);
+			if (aowriter != null && outputWaveArray != null) aowriter.WriteMultiSample(false, outputWaveArray);
+//			if (aireader != null) aireader.ReadMultiSample(1000);
 			if (dowriter != null && byteArray != null) dowriter.WriteMultiSamplePort(false, byteArray);
 			task.Control(TaskAction.Verify);
 		}
@@ -62,15 +78,22 @@ namespace NIDaqInterface {
 		}*/
 		public void execute() {
 			task.Control(TaskAction.Start);
+			if (aireader != null) {
+				readAsync = aireader.BeginReadMultiSample(sampleLength,null,null);
+			}
 		}
 		public void stop() {
+			if (aireader != null) {
+				inputWaveArray = aireader.EndReadMultiSample(readAsync);
+			}
 			task.Control(TaskAction.Stop);
 			task.Control(TaskAction.Unreserve);
 			task.Dispose();
 		}
 		public void reset() {
 			task.Control(TaskAction.Stop);
-			if (aowriter != null && waveArray != null) aowriter.WriteMultiSample(false, waveArray);
+			if (aowriter != null && outputWaveArray != null) aowriter.WriteMultiSample(false, outputWaveArray);
+//			if (aireader != null) aireader.ReadMultiSample(1000);
 			if (dowriter != null && byteArray != null) dowriter.WriteMultiSamplePort(false, byteArray);
 			task.Control(TaskAction.Verify);
 		}

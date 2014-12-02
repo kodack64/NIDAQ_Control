@@ -13,16 +13,20 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-
+using System.IO;
 
 public class TaskAssemble {
 	public string deviceName;
-	public string[] analogChannelNames;
-	public string[] digitalChannelNames;
-	public double[,] waves;
-	public uint[,] digis;
-	public double[] maxVoltage;
-	public double[] minVoltage;
+	public string[] analogOutputChannelNames;
+	public string[] digitalOutputChannelNames;
+	public string[] analogInputChannelNames;
+	public string[] digitalInputChannelNames;
+	public double[,] outputWaves;
+	public uint[,] outputDigis;
+	public double[] outputMaxVoltage;
+	public double[] outputMinVoltage;
+	public double[] inputMaxVoltage;
+	public double[] inputMinVoltage;
 }
 
 namespace NIDaqController {
@@ -89,6 +93,8 @@ namespace NIDaqController {
 			DebugWindow.Write("シーケンスから信号を作成...");
 
 			taskAsm.Clear();
+
+			//デバイスごとにTaskAssembleを作成
 			List<string> deviceList = getEnabledDeviceList();
 			int divisionCount = divisions.Count;
 			for (int i = 0; i < deviceList.Count(); i++) {
@@ -97,38 +103,47 @@ namespace NIDaqController {
 
 				ta.deviceName = deviceList[i];
 
-				List<Channel> analogChannels = channels.FindAll((ch) => ch.deviceName == ta.deviceName && ch.isAnalog);
-				List<Channel> digitalChannels = channels.FindAll( (ch) => ch.deviceName == ta.deviceName  && !ch.isAnalog);
-				int analogChannelCount = analogChannels.Count();
-				int digitalChannelCount = digitalChannels.Count();
+				// すべてのチャンネルから特定デバイスに属するAO/DO/AI/DIをフィルター
+				List<Channel> analogOutputChannels = channels.FindAll((ch) => ch.deviceName == ta.deviceName && ch.isAnalog && ch.isOutput);
+				List<Channel> analogInputChannels = channels.FindAll((ch) => ch.deviceName == ta.deviceName && ch.isAnalog && !ch.isOutput);
+				List<Channel> digitalOutputChannels = channels.FindAll((ch) => ch.deviceName == ta.deviceName && !ch.isAnalog && ch.isOutput);
+				int analogOutputChannelCount = analogOutputChannels.Count();
+				int analogInputChannelCount = analogInputChannels.Count();
+				int digitalOutputChannelCount = digitalOutputChannels.Count();
 
-				ta.analogChannelNames = new string[analogChannelCount];
-				ta.maxVoltage = new double[analogChannelCount];
-				ta.minVoltage = new double[analogChannelCount];
-				ta.waves = new double[analogChannelCount, sampleCount];
+				ta.analogOutputChannelNames = new string[analogOutputChannelCount];
+				ta.outputMaxVoltage = new double[analogOutputChannelCount];
+				ta.outputMinVoltage = new double[analogOutputChannelCount];
+				ta.outputWaves = new double[analogOutputChannelCount, sampleCount];
 	
-				ta.digitalChannelNames = new string[digitalChannelCount];
-				ta.digis = new uint[digitalChannelCount, sampleCount];
+				ta.digitalOutputChannelNames = new string[digitalOutputChannelCount];
+				ta.outputDigis = new uint[digitalOutputChannelCount, sampleCount];
 
-				for (int ci = 0; ci < analogChannelCount; ci++) {
-					ta.analogChannelNames[ci] = analogChannels[ci].channelName;
-					ta.minVoltage[ci] = analogChannels[ci].minVoltage;
-					ta.maxVoltage[ci] = analogChannels[ci].maxVoltage;
+				ta.analogInputChannelNames = new string[analogInputChannelCount];
+				ta.inputMaxVoltage = new double[analogInputChannelCount];
+				ta.inputMinVoltage = new double[analogInputChannelCount];
+
+				// AOを整理
+				for (int ci = 0; ci < analogOutputChannelCount; ci++) {
+					ta.analogOutputChannelNames[ci] = analogOutputChannels[ci].channelName;
+					ta.outputMinVoltage[ci] = analogOutputChannels[ci].minVoltage;
+					ta.outputMaxVoltage[ci] = analogOutputChannels[ci].maxVoltage;
 					long offset = 0;
+					// division ごとに波形をサンプルに変換
 					for (int di = 0; di+1 < divisionCount; di++) {
 						long divisionSample = getDivisionSampleCount(di);
-						NodeType type = analogChannels[ci].nodes[di].type;
-						double current = analogChannels[ci].nodes[di].value;
-						double next = analogChannels[ci].nodes[di + 1].value;
+						NodeType type = analogOutputChannels[ci].nodes[di].type;
+						double current = analogOutputChannels[ci].nodes[di].value;
+						double next = analogOutputChannels[ci].nodes[di + 1].value;
 						if (type == NodeType.Hold) {
 							for (int si = 0; si < divisionSample; si++) {
-								ta.waves[ci, offset + si] = current;
+								ta.outputWaves[ci, offset + si] = current;
 							}
 						} else if (type == NodeType.Linear) {
 							double val = current;
 							double step = (next - current) / divisionSample;
 							for (int si = 0; si < divisionSample; si++) {
-								ta.waves[ci, offset + si] = val;
+								ta.outputWaves[ci, offset + si] = val;
 								val += step;
 							}
 						}
@@ -136,20 +151,29 @@ namespace NIDaqController {
 					}
 				}
 
-				for (int ci = 0; ci < digitalChannelCount; ci++) {
-					ta.digitalChannelNames[ci] = digitalChannels[ci].channelName;
+				// DOの情報を整理
+				for (int ci = 0; ci < digitalOutputChannelCount; ci++) {
+					ta.digitalOutputChannelNames[ci] = digitalOutputChannels[ci].channelName;
 					long offset=0;
 					for(int di=0;di+1<divisionCount;di++){
 						long divisionSample = getDivisionSampleCount(di);
-						double value = digitalChannels[ci].nodes[di].value;
-						string[] namespl = digitalChannels[ci].channelName.Split("line".ToCharArray());
+						double value = digitalOutputChannels[ci].nodes[di].value;
+						string[] namespl = digitalOutputChannels[ci].channelName.Split("line".ToCharArray());
 						int linenum = int.Parse(namespl[namespl.Count()-1]);
 						for (int si = 0; si < divisionSample; si++) {
-							ta.digis[ci, offset + si] = (uint)(value>0?1<<linenum:0);
+							ta.outputDigis[ci, offset + si] = (uint)(value>0?1<<linenum:0);
 						}
 						offset += divisionSample;
 					}
 				}
+
+				// AIの情報を整理
+				for (int ci = 0; ci < analogInputChannelCount; ci++) {
+					ta.analogInputChannelNames[ci] = analogInputChannels[ci].channelName;
+					ta.inputMinVoltage[ci] = analogInputChannels[ci].minVoltage;
+					ta.inputMaxVoltage[ci] = analogInputChannels[ci].maxVoltage;
+				}
+
 				taskAsm.Add(ta);
 			}
 			DebugWindow.WriteLine("OK");
@@ -158,6 +182,18 @@ namespace NIDaqController {
 			DebugWindow.WriteLine(" シーケンス時間	:" + getSequenceTime());
 			DebugWindow.WriteLine(" サンプル数	:" + getSequenceSampleCount());
 			DebugWindow.WriteLine(" 通信量	:" + getSequenceSampleCount()*sizeof(double)*getEnabledChannelCount()*1e-6+"MByte");
+		}
+		////////////////波形取得
+		public void setWaveForm(String channelName , double[] data) {
+			List<Channel> matchedChannel = channels.FindAll((ch) => ch.channelName == channelName);
+			if (matchedChannel.Count > 0) matchedChannel[0].inputWaveArray=data;
+
+			String fileName = "_in_" + channelName.Replace('/', '_') + ".txt";
+			StreamWriter sw = new StreamWriter(fileName);
+			for(int i=0;i<data.Length;i++){
+				sw.WriteLine("{0} ", data[i]);
+			}
+			sw.Close();
 		}
 
 		////////////////情報取得

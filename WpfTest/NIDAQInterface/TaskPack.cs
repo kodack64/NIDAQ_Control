@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using NationalInstruments.DAQmx;
-
+/*
 namespace NIDaqInterface {
 	class TaskPack {
 		double[,] waveArray;
@@ -62,3 +62,4 @@ namespace NIDaqInterface {
 	}
 
 }
+*/

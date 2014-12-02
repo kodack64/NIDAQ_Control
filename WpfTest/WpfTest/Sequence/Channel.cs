@@ -13,6 +13,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Microsoft.Win32;
+using System.IO;
 
 namespace NIDaqController {
 	//シーケンスのうち単一の入出力ライン
@@ -143,6 +145,9 @@ namespace NIDaqController {
 		//コンパイル時の区間ごとの配列
 		private List<double[]> samples = new List<double[]>();
 
+		//AnalogInput時のwavearray
+		public double[] inputWaveArray = null;
+
 		//コンストラクタ
 		public Channel(Sequence _parent, int divisionCount) {
 			parent = _parent;
@@ -159,7 +164,7 @@ namespace NIDaqController {
 			IOCombo = new ComboBox() { };
 			IOCombo.Items.Add("Out"); IOCombo.Items.Add("In"); IOCombo.SelectedIndex = 0;
 			IOCombo.SelectionChanged += ((s, e) => updateItemList());
-			IOCombo.IsEnabled = false;
+//			IOCombo.IsEnabled = false;
 			Combo_channelName = new ComboBox() { };
 			foreach (string str in TaskManager.GetInstance().getAnalogOutputList()) {
 				Combo_channelName.Items.Add(str);
@@ -181,7 +186,7 @@ namespace NIDaqController {
 			{
 				StackPanel miniStack = new StackPanel() { Orientation = Orientation.Horizontal };
 				miniStack.Children.Add(Text_minVoltage);
-				miniStack.Children.Add(new Label() { Content = "V - " });
+				miniStack.Children.Add(new Label() { Content = "V ～ " });
 				miniStack.Children.Add(Text_maxVoltage);
 				miniStack.Children.Add(new Label() { Content = "V" });
 				panel.Children.Add(miniStack);
@@ -229,6 +234,7 @@ namespace NIDaqController {
 				Text_minVoltage.IsEnabled = false;
 				Text_maxVoltage.IsEnabled = false;
 			}
+			repaint();
 		}
 
 
@@ -270,10 +276,14 @@ namespace NIDaqController {
 			item = new MenuItem() { Header =virtualName + " - " + parent.getDivisionName(clickedColumn) , IsEnabled=false};
 			canvas.ContextMenu.Items.Add(item);
 
+			/*
 			canvas.ContextMenu.Items.Add(new Separator());
-
 			item = new MenuItem() { Header="Edit Value"};
 			item.Click += ((object s, RoutedEventArgs arg) => this.editNode(clickedColumn));
+			canvas.ContextMenu.Items.Add(item);
+			*/
+			item = new MenuItem() { Header = "Save WaveForm" };
+			item.Click += ((object s, RoutedEventArgs arg) => this.saveWaveForm());
 			canvas.ContextMenu.Items.Add(item);
 
 			canvas.ContextMenu.Items.Add(new Separator());
@@ -295,6 +305,30 @@ namespace NIDaqController {
 				itemHead.Items.Add(item);
 			}
 			canvas.ContextMenu.Items.Add(itemHead);
+		}
+
+		//波形の保存
+		public void saveWaveForm() {
+			if (inputWaveArray == null) {
+				MessageBox.Show("このチャンネルの保持する入力波形がありません。","エラー");
+			} else {
+				SaveFileDialog dialog = new SaveFileDialog() {
+					Filter = "波形データ|*.txt",
+					FileName = channelName.Replace("/","_")+".txt"
+				};
+				bool? result = dialog.ShowDialog();
+				if (result.HasValue) {
+					if (result.Value) {
+						double dt = 1.0 / parent.sampleRate;
+						var sw = File.CreateText(dialog.FileName);
+						for(int i=0;i<inputWaveArray.Length;i++){
+							sw.WriteLine("{0} {1}",dt*i,inputWaveArray[i]);
+						}
+						sw.Close();
+						DebugWindow.WriteLine(String.Format("{0}に保存しました。", dialog.FileName));
+					}
+				}
+			}
 		}
 
 		//ノードの編集
@@ -413,14 +447,11 @@ namespace NIDaqController {
 			double minVol = minVoltage;
 			double maxVol = maxVoltage;
 			double circleSize = 4.0;
+			int sampleOffset = 0;
 			for (int i = 0; i < nodes.Count; i++) {
-				Ellipse Node = new Ellipse() { Fill=Brushes.Black,StrokeThickness=2,Width=8,Height=8};
-				Canvas.SetLeft(Node, Division.width * i - circleSize);
-				Canvas.SetTop(Node, plotHeightInCanvas(nodes[i].value, minVol, maxVol) - circleSize);
-				canvas.Children.Add(Node);
-					
+
 				Line gridline;
-				gridline = new Line() { Stroke=Brushes.Black, StrokeThickness=2};
+				gridline = new Line() { Stroke = Brushes.Black, StrokeThickness = 2 };
 				gridline.X1 = 0;
 				gridline.X2 = Division.width * nodes.Count;
 				gridline.Y1 = 0;
@@ -433,29 +464,79 @@ namespace NIDaqController {
 				gridline.Y2 = height;
 				canvas.Children.Add(gridline);
 
+				if (isOutput) {
+					Ellipse Node = new Ellipse() { Fill = Brushes.Black, StrokeThickness = 2, Width = 8, Height = 8 };
+					Canvas.SetLeft(Node, Division.width * i - circleSize);
+					if (isAnalog) Canvas.SetTop(Node, plotHeightInCanvas(nodes[i].value, minVol, maxVol) - circleSize);
+					else Canvas.SetTop(Node, height / 2 + (nodes[i].value == 0 ? height / 4 : -height / 4) - circleSize);
+					canvas.Children.Add(Node);
+				}
 				Line line;
 				int next = i + 1;
 				if (next == nodes.Count) continue;
-				if (nodes[i].type == NodeType.Hold) {
-					line = new Line() { Stroke=Brushes.LightGray,StrokeThickness=2};
-					line.X1 = Division.width * i;
-					line.X2 = Division.width * next;
-					line.Y1 = plotHeightInCanvas(nodes[i].value,minVol,maxVol);
-					line.Y2 = line.Y1;
-					canvas.Children.Add(line);
-					line = new Line() { Stroke = Brushes.LightGray, StrokeThickness = 2 };
-					line.X1 = Division.width * next;
-					line.X2 = Division.width * next;
-					line.Y1 = plotHeightInCanvas(nodes[i].value, minVol, maxVol);
-					line.Y2 = plotHeightInCanvas(nodes[next].value, minVol, maxVol);
-					canvas.Children.Add(line);
-				} else if (nodes[i].type == NodeType.Linear) {
-					line = new Line() { Stroke = Brushes.LightGray, StrokeThickness = 2 };
-					line.X1 = Division.width * i;
-					line.X2 = Division.width * next;
-					line.Y1 = plotHeightInCanvas(nodes[i].value, minVol, maxVol);
-					line.Y2 = plotHeightInCanvas(nodes[next].value, minVol, maxVol);
-					canvas.Children.Add(line);
+
+				if (isOutput) {
+					// digital out
+					if (!isAnalog) {
+						line = new Line() { Stroke = Brushes.LightGray, StrokeThickness = 2 };
+						line.X1 = Division.width * i;
+						line.X2 = Division.width * next;
+						line.Y1 = line.Y2 = nodes[i].value == 0 ? height / 2 + height / 4 : height / 2 - height / 4;
+						canvas.Children.Add(line);
+						if ((nodes[i].value == 0) != (nodes[next].value == 0)) {
+							line = new Line() { Stroke = Brushes.LightGray, StrokeThickness = 2 };
+							line.X1 = Division.width * next;
+							line.X2 = Division.width * next;
+							line.Y1 = nodes[i].value == 0 ? height / 2 + height / 4 : height / 2 - height / 4;
+							line.Y2 = nodes[next].value == 0 ? height / 2 + height / 4 : height / 2 - height / 4;
+							canvas.Children.Add(line);
+						}
+					}
+					// analog out
+					else{
+						if (nodes[i].type == NodeType.Hold) {
+							line = new Line() { Stroke = Brushes.LightGray, StrokeThickness = 2 };
+							line.X1 = Division.width * i;
+							line.X2 = Division.width * next;
+							line.Y1 = plotHeightInCanvas(nodes[i].value, minVol, maxVol);
+							line.Y2 = line.Y1;
+							canvas.Children.Add(line);
+							line = new Line() { Stroke = Brushes.LightGray, StrokeThickness = 2 };
+							line.X1 = Division.width * next;
+							line.X2 = Division.width * next;
+							line.Y1 = plotHeightInCanvas(nodes[i].value, minVol, maxVol);
+							line.Y2 = plotHeightInCanvas(nodes[next].value, minVol, maxVol);
+							canvas.Children.Add(line);
+						} else if (nodes[i].type == NodeType.Linear) {
+							line = new Line() { Stroke = Brushes.LightGray, StrokeThickness = 2 };
+							line.X1 = Division.width * i;
+							line.X2 = Division.width * next;
+							line.Y1 = plotHeightInCanvas(nodes[i].value, minVol, maxVol);
+							line.Y2 = plotHeightInCanvas(nodes[next].value, minVol, maxVol);
+							canvas.Children.Add(line);
+						}
+					}
+				} else {
+					//analog in
+					if (isAnalog) {
+						if (inputWaveArray != null) {
+							int divisionSample = parent.getDivisionSampleCount(i);
+							int pixStep = Division.width/70;
+							int sampleStep = (int)(1.0 * pixStep * divisionSample / Division.width);
+							for (int pix = 0; pix < Division.width; pix+=pixStep) {
+								int cur = (int)(1.0 * divisionSample * pix / Division.width);
+								if (sampleOffset + cur + sampleStep < inputWaveArray.Length) {
+									line = new Line() { Stroke = Brushes.Black, StrokeThickness = 1 };
+									line.X1 = Division.width * i + pix;
+									line.X2 = Math.Min(Division.width * i + pix + pixStep, Division.width*next);
+									line.Y1 = plotHeightInCanvas(inputWaveArray[sampleOffset + cur], minVol, maxVol);
+									line.Y2 = plotHeightInCanvas(inputWaveArray[sampleOffset + Math.Min(cur + sampleStep,divisionSample-1)], minVol, maxVol);
+									canvas.Children.Add(line);
+								} else break;
+							}
+							sampleOffset += divisionSample;
+						}
+					}
 				}
 			}
 		}

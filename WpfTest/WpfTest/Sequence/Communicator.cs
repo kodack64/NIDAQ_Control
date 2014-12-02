@@ -37,12 +37,12 @@ namespace NIDaqController{
 		public void Run() {
 			currentRepeatCount = 0;
 			if (seq.getCurrentSequence().getDivisionCount() <= 1){
-				DebugWindow.WriteLine("オペレーションが空です。");
+				DebugWindow.WriteLine("シーケンスが空です。");
 				MainWindow.myInstance.Dispatcher.BeginInvoke(
 					new Action(() => { MainWindow.myInstance.Callback_SystemStop(); })
 					);
 			} else if(seq.getCurrentSequence().getChannelCount() == 0) {
-				DebugWindow.WriteLine("IOが空です。");
+				DebugWindow.WriteLine("IOポートがありません。");
 				MainWindow.myInstance.Dispatcher.BeginInvoke(
 					new Action(() => { MainWindow.myInstance.Callback_SystemStop(); })
 					);
@@ -63,14 +63,19 @@ namespace NIDaqController{
 				return;
 			}
 			foreach (TaskAssemble ta in current.taskAsm) {
-				if (ta.analogChannelNames.Count() > 0) {
+				if (ta.analogOutputChannelNames.Count() > 0) {
 					taskManager.initTask(ta.deviceName, current.sampleRate, current.getSequenceSampleCount());
-					taskManager.popTask(ta.analogChannelNames, ta.minVoltage, ta.maxVoltage, ta.waves);
+					taskManager.popTaskAnalogOutput(ta.analogOutputChannelNames, ta.outputMinVoltage, ta.outputMaxVoltage, ta.outputWaves);
 					taskManager.verify();
 				}
-				if (ta.digitalChannelNames.Count() > 0) {
+				if (ta.digitalOutputChannelNames.Count() > 0) {
 					taskManager.initTask(ta.deviceName, current.sampleRate, current.getSequenceSampleCount());
-					taskManager.popTask(ta.digitalChannelNames, ta.digis);
+					taskManager.popTaskDigitalOutput(ta.digitalOutputChannelNames, ta.outputDigis);
+					taskManager.verify();
+				}
+				if (ta.analogInputChannelNames.Count() > 0) {
+					taskManager.initTask(ta.deviceName, current.sampleRate, current.getSequenceSampleCount());
+					taskManager.popTaskAnalogInput(ta.analogInputChannelNames, ta.inputMinVoltage, ta.inputMaxVoltage);
 					taskManager.verify();
 				}
 			}

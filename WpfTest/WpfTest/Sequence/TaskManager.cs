@@ -34,11 +34,14 @@ namespace NIDaqController {
 		public void initTask(string deviceName,double sampleRate,int sampleLength) {
 			NIDaqTaskManager.GetInstance().initTask(deviceName, sampleRate,sampleLength);
 		}
-		public void popTask(string[] channelName,double[] minVoltage,double[] maxVoltage,double[,]wave) {
-			NIDaqTaskManager.GetInstance().popTask(channelName,minVoltage,maxVoltage,wave);
+		public void popTaskAnalogOutput(string[] channelName,double[] minVoltage,double[] maxVoltage,double[,]wave) {
+			NIDaqTaskManager.GetInstance().popTaskAnalogOutput(channelName,minVoltage,maxVoltage,wave);
 		}
-		public void popTask(string[] channelName, uint[,] digis) {
-			NIDaqTaskManager.GetInstance().popTask(channelName,digis);
+		public void popTaskAnalogInput(string[] channelName, double[] minVoltage, double[] maxVoltage) {
+			NIDaqTaskManager.GetInstance().popTaskAnalogInput(channelName, minVoltage, maxVoltage);
+		}
+		public void popTaskDigitalOutput(string[] channelName, uint[,] digis) {
+			NIDaqTaskManager.GetInstance().popTaskDigitalOutput(channelName,digis);
 		}
 		public void verify() {
 			NIDaqTaskManager.GetInstance().verify();
@@ -63,6 +66,15 @@ namespace NIDaqController {
 		}
 		public void setRepeatFlag(bool flag) {
 			NIDaqTaskManager.GetInstance().setRepeatFlag(flag);
+		}
+		public double[,] getInputWaveArray(int deviceIndex) {
+			return NIDaqTaskManager.GetInstance().getInputWaveArray(deviceIndex);
+		}
+		public int getInputWaveDeviceCount() {
+			return NIDaqTaskManager.GetInstance().getInputWaveDeviceCount();
+		}
+		public List<String> getInputWaveNameList(int deviceIndex) {
+			return NIDaqTaskManager.GetInstance().getInputWaveNameList(deviceIndex);
 		}
 	}
 }
