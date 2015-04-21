@@ -51,16 +51,27 @@ namespace WpfTest {
 				return Check_RepeatRun.IsChecked.Value;
 			}
 		}
+
+		public static void WriteMessage(string str) {
+			myInstance.TextBox_Notice.Dispatcher.InvokeAsync(
+				new Action(() => {
+					myInstance.TextBox_Notice.AppendText(str);
+					myInstance.TextBox_Notice.ScrollToEnd();
+				})
+			); 
+		}
 		
 		// コンストラクタ
 		public MainWindow() {
 			myInstance = this;
 
-			DebugWindow.WriteLine("初期化");
+//			DebugWindow.WriteLine("初期化");
 			InitializeComponent();
+			WriteMessage("初期化\n");
 
 			//動作スレッドの初期化
-			DebugWindow.WriteLine("シーケンス作成");
+//			DebugWindow.WriteLine("シーケンス作成");
+			WriteMessage("シーケンス作成\n");
 			seq = new Sequences();
 			seq.getCurrentSequence().bindGridUI(SequenceGrid);
 //			seq.getCurrentSequence().addAllAnalogOutput();
@@ -112,9 +123,9 @@ namespace WpfTest {
 		}
 		// 閉じる
 		private void Callback_WindowClose(object sender, RoutedEventArgs e) {
-			DebugWindow.WriteLine("終了");
+			WriteMessage("終了");
 			communicator.Stop();
-			DebugWindow.MyClose();
+//			DebugWindow.MyClose();
 			this.Close();
 		}
 
@@ -127,14 +138,14 @@ namespace WpfTest {
 				communicator.repeatCount = repeatCount;
 				communicator.Run();
 				Button_Run.Content = "Stop Sequence";
-				DebugWindow.WriteLine("シーケンス開始");
+				WriteMessage("シーケンス開始\n");
 			}
 			//停止の場合
 			else {
 				//スレッドを停止し応答があるまで待機
 				communicator.Stop();
 				Button_Run.Content = "Run Sequence";
-				DebugWindow.WriteLine("シーケンス中断");
+				WriteMessage("シーケンス中断");
 			}
 		}
 
@@ -146,7 +157,7 @@ namespace WpfTest {
 					if (Button_Run.IsChecked.HasValue && Button_Run.IsChecked.Value) {
 						Button_Run.IsChecked = false;
 						Button_Run.Content = "Run Sequence";
-						DebugWindow.WriteLine("シーケンス終了");
+						WriteMessage("シーケンス終了");
 					}
 				})
 			);
@@ -169,7 +180,6 @@ namespace WpfTest {
 
 		// シーケンスファイルのロード
 		private void Callback_LoadSequence(object sender, RoutedEventArgs e) {
-			DebugWindow.WriteLine("シーケンス読み込み");
 			OpenFileDialog dialog = new OpenFileDialog()
 			{
 				Multiselect=false,
@@ -177,14 +187,15 @@ namespace WpfTest {
 			};
 			bool? result = dialog.ShowDialog();
 			if (result.HasValue) {
-				if(result.Value){
+				if (result.Value) {
+					WriteMessage("シーケンス読み込み");
 					try {
 						seq.loadCurrentSeq(File.ReadAllText(dialog.FileName));
 						seq.getCurrentSequence().bindGridUI(SequenceGrid);
-						DebugWindow.WriteLine(String.Format("{0}を読み込みました", dialog.FileName));
+						WriteMessage(String.Format("{0}を読み込みました", dialog.FileName));
 						repaint();
 					} catch (Exception ex) {
-						DebugWindow.WriteLine(String.Format("{0}を開けませんでした\n*{1}:{2}", dialog.FileName,ex.StackTrace,ex.Message));
+						WriteMessage(String.Format("{0}を開けませんでした\n*{1}:{2}", dialog.FileName, ex.StackTrace, ex.Message));
 					}
 				}
 			}
@@ -192,7 +203,7 @@ namespace WpfTest {
 
 		// シーケンスファイルのセーブ
 		private void Callback_SaveSequence(object sender, RoutedEventArgs e) {
-			DebugWindow.WriteLine("シーケンス保存");
+			WriteMessage("シーケンス保存");
 			SaveFileDialog dialog = new SaveFileDialog()
 			{
 				Filter="seqファイル|*.seq"
@@ -203,7 +214,7 @@ namespace WpfTest {
 					var sw = File.CreateText(dialog.FileName);
 					sw.Write(seq.writeCurrentSeq());
 					sw.Close();
-					DebugWindow.WriteLine(String.Format("{0}に保存しました。", dialog.FileName));
+					WriteMessage(String.Format("{0}に保存しました。", dialog.FileName));
 				}
 			}
 		}

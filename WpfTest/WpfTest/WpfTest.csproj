@@ -89,6 +89,9 @@
     </ApplicationDefinition>
     <Compile Include="Sequence\Channel.cs" />
     <Compile Include="Sequence\Division.cs" />
+    <Compile Include="SubWindow\DebugWindow.xaml.cs">
+      <DependentUpon>DebugWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="SubWindow\EditDivisionWindow.xaml.cs">
       <DependentUpon>EditDivisionWindow.xaml</DependentUpon>
     </Compile>
@@ -132,9 +135,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Sequence\Communicator.cs" />
-    <Compile Include="SubWindow\DebugWindow.xaml.cs">
-      <DependentUpon>DebugWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>

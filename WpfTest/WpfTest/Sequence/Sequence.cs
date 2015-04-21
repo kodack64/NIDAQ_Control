@@ -14,6 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.IO;
+using WpfTest;
 
 public class TaskAssemble {
 	public string deviceName;
@@ -90,7 +91,7 @@ namespace NIDaqController {
 		////////////////波形成性
 		//現在のシーケンスから波形を生成
 		public void compile() {
-			DebugWindow.Write("シーケンスから信号を作成...");
+			MainWindow.WriteMessage("シーケンスから信号を作成...");
 
 			taskAsm.Clear();
 
@@ -138,12 +139,16 @@ namespace NIDaqController {
 						if (type == NodeType.Hold) {
 							for (int si = 0; si < divisionSample; si++) {
 								ta.outputWaves[ci, offset + si] = current;
+								ta.outputWaves[ci, offset + si] = Math.Max(ta.outputWaves[ci, offset + si], ta.outputMinVoltage[ci]);
+								ta.outputWaves[ci, offset + si] = Math.Min(ta.outputWaves[ci, offset + si], ta.outputMaxVoltage[ci]);
 							}
 						} else if (type == NodeType.Linear) {
 							double val = current;
 							double step = (next - current) / divisionSample;
 							for (int si = 0; si < divisionSample; si++) {
 								ta.outputWaves[ci, offset + si] = val;
+								ta.outputWaves[ci, offset + si] = Math.Max(ta.outputWaves[ci, offset + si], ta.outputMinVoltage[ci]);
+								ta.outputWaves[ci, offset + si] = Math.Min(ta.outputWaves[ci, offset + si], ta.outputMaxVoltage[ci]);
 								val += step;
 							}
 						}
@@ -176,12 +181,12 @@ namespace NIDaqController {
 
 				taskAsm.Add(ta);
 			}
-			DebugWindow.WriteLine("OK");
-			DebugWindow.WriteLine(" サンプルレート	:" + sampleRate);
-			DebugWindow.WriteLine(" 使用デバイス数 :" + deviceList.Count());
-			DebugWindow.WriteLine(" シーケンス時間	:" + getSequenceTime());
-			DebugWindow.WriteLine(" サンプル数	:" + getSequenceSampleCount());
-			DebugWindow.WriteLine(" 通信量	:" + getSequenceSampleCount()*sizeof(double)*getEnabledChannelCount()*1e-6+"MByte");
+//			MainWindow.WriteMessage("OK\n");
+			MainWindow.WriteMessage(" サンプルレート:" + sampleRate+" / ");
+			MainWindow.WriteMessage(" 使用デバイス数:" + deviceList.Count()+" / ");
+			MainWindow.WriteMessage(" シーケンス時間:" + getSequenceTime() + " / ");
+			MainWindow.WriteMessage(" サンプル数:" + getSequenceSampleCount() + " / ");
+			MainWindow.WriteMessage(" 通信量:" + getSequenceSampleCount()*sizeof(double)*getEnabledChannelCount()*1e-6+"MByte\n");
 		}
 		////////////////波形取得
 		public void setWaveForm(String channelName , double[] data) {
@@ -288,7 +293,7 @@ namespace NIDaqController {
 		////////////////UI操作
 		//divisionを挿入
 		public void insertDivision(int index) {
-			DebugWindow.WriteLine(String.Format("{0}行目に行を挿入",index));
+			MainWindow.WriteMessage(String.Format("{0}行目に行を挿入\n",index));
 			divisions.Insert(index, new Division(this));
 			bindedGrid.ColumnDefinitions.Insert(index, new ColumnDefinition() { Width = new GridLength(Division.width) });
 			foreach (Channel ch in channels) {
@@ -302,7 +307,7 @@ namespace NIDaqController {
 		}
 		//divisionを削除
 		public void removeDivision(int index) {
-			DebugWindow.WriteLine(String.Format("{0}行目を削除", index));
+			MainWindow.WriteMessage(String.Format("{0}行目を削除\n", index));
 			bindedGrid.Children.Remove(divisions[index].panel);
 			divisions.RemoveAt(index);
 			foreach(Channel ch in channels){
@@ -316,7 +321,7 @@ namespace NIDaqController {
 		}
 		//チャンネルを挿入
 		public void insertChannel(int index) {
-			DebugWindow.WriteLine(String.Format("{0}列目に列を挿入", index));
+			MainWindow.WriteMessage(String.Format("{0}列目に列を挿入\n", index));
 			channels.Insert(index, new Channel(this, divisions.Count));
 			bindedGrid.RowDefinitions.Insert(index, new RowDefinition() { Height = new GridLength(Channel.height) });
 			for (int i = index; i < channels.Count; i++) {
@@ -328,7 +333,7 @@ namespace NIDaqController {
 		}
 		//チャンネルを削除
 		public void removeChannel(int index) {
-			DebugWindow.WriteLine(String.Format("{0}列目を削除", index));
+			MainWindow.WriteMessage(String.Format("{0}列目を削除\n", index));
 			bindedGrid.Children.Remove(channels[index].panel);
 			bindedGrid.Children.Remove(channels[index].canvas);
 			channels.RemoveAt(index);
@@ -340,7 +345,7 @@ namespace NIDaqController {
 		}
 		//チャンネルを上に移動
 		public void moveUp(int index) {
-			DebugWindow.WriteLine(String.Format("{0}列目を上に移動", index));
+			MainWindow.WriteMessage(String.Format("{0}列目を上に移動\n", index));
 			Channel ch = channels[index];
 			channels[index] = channels[index - 1];
 			channels[index - 1] = ch;
@@ -350,7 +355,7 @@ namespace NIDaqController {
 		}
 		//チャンネルを下に移動
 		public void moveDown(int index) {
-			DebugWindow.WriteLine(String.Format("{0}列目を下に移動", index));
+			MainWindow.WriteMessage(String.Format("{0}列目を下に移動\n", index));
 			Channel ch = channels[index];
 			channels[index] = channels[index + 1];
 			channels[index + 1] = ch;
@@ -403,7 +408,7 @@ namespace NIDaqController {
 		////////////////UI描画
 		//UIを更新
 		public void bindGridUI(Grid grid) {
-			DebugWindow.WriteLine("シーケンスとUIを同期");
+			MainWindow.WriteMessage("シーケンスとUIを同期\n");
 			bindedGrid = grid;
 			bindedGrid.Children.Clear();
 			bindedGrid.ColumnDefinitions.Clear();
@@ -434,12 +439,13 @@ namespace NIDaqController {
 				channels[i].rowIndex=i;
 				channels[i].span=divisions.Count;
 				bindedGrid.Children.Add(channels[i].canvas);
+				bindedGrid.Children.Add(channels[i].panel);
 			}
 			repaint();
 		}
 		//再描画
 		public void repaint() {
-			DebugWindow.WriteLine("セルを再描画");
+//			MainWindow.WriteMessage("セルを再描画\n");
 			foreach (Channel ch in channels) {
 				ch.repaint();
 			}

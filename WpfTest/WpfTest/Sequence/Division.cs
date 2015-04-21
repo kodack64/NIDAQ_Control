@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using WpfTest;
 
 
 namespace NIDaqController {
@@ -165,7 +166,7 @@ namespace NIDaqController {
 				timeValue = window.resultTimeValue;
 				timeUnit = window.resultTimeUnit;
 			}
-			DebugWindow.WriteLine("Divisionの情報を更新");
+			MainWindow.WriteMessage("Divisionの情報を更新\n");
 		}
 		//列番号を移動
 /*		public void setPosition(int i) {

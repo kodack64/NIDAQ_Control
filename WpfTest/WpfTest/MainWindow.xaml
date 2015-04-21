@@ -29,6 +29,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="30"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="150"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200" />
@@ -89,6 +90,13 @@
                     </Grid.ColumnDefinitions>
                 </Grid>
             </ScrollViewer>
+            <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Vertical" Margin="20" >
+                <Border BorderThickness="1" Margin="0,0,0,0" Padding="4" BorderBrush="Black">
+                    <StackPanel>
+                        <TextBox x:Name="TextBox_Notice" TextWrapping="Wrap" Height="100" Text="" IsReadOnly="True" VerticalScrollBarVisibility="Auto"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
         </Grid>
     </Border>
 </Window>

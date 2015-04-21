@@ -37,12 +37,12 @@ namespace NIDaqController{
 		public void Run() {
 			currentRepeatCount = 0;
 			if (seq.getCurrentSequence().getDivisionCount() <= 1){
-				DebugWindow.WriteLine("シーケンスが空です。");
+				MainWindow.WriteMessage("シーケンスが空です。\n");
 				MainWindow.myInstance.Dispatcher.BeginInvoke(
 					new Action(() => { MainWindow.myInstance.Callback_SystemStop(); })
 					);
 			} else if(seq.getCurrentSequence().getChannelCount() == 0) {
-				DebugWindow.WriteLine("IOポートがありません。");
+				MainWindow.WriteMessage("IOポートがありません。\n");
 				MainWindow.myInstance.Dispatcher.BeginInvoke(
 					new Action(() => { MainWindow.myInstance.Callback_SystemStop(); })
 					);
@@ -56,7 +56,7 @@ namespace NIDaqController{
 			taskManager.clearTask();
 			taskManager.setRepeatFlag(isRepeatEnabled);
 			if (current.taskAsm.Count() == 0) {
-				DebugWindow.WriteLine("有効なチャンネルがありません。");
+				MainWindow.WriteMessage("有効なチャンネルがありません。\n");
 				MainWindow.myInstance.Dispatcher.BeginInvoke(
 					new Action(() => { MainWindow.myInstance.Callback_SystemStop(); })
 					);
@@ -92,6 +92,7 @@ namespace NIDaqController{
 		public void TaskEnd() {
 			currentRepeatCount++;
 			if (isRepeatEnabled && currentRepeatCount < repeatCount) {
+				MainWindow.WriteMessage(String.Format("{0}/{1}回目の開始\n",currentRepeatCount+1,repeatCount));
 				MainWindow.myInstance.Dispatcher.BeginInvoke(new Action(() => { doTask(); }));
 			} else {
 				MainWindow.myInstance.Dispatcher.BeginInvoke(new Action(() => { MainWindow.myInstance.Callback_SystemStop(); }));

@@ -15,6 +15,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Microsoft.Win32;
 using System.IO;
+using WpfTest;
 
 namespace NIDaqController {
 	//シーケンスのうち単一の入出力ライン
@@ -325,7 +326,7 @@ namespace NIDaqController {
 							sw.WriteLine("{0} {1}",dt*i,inputWaveArray[i]);
 						}
 						sw.Close();
-						DebugWindow.WriteLine(String.Format("{0}に保存しました。", dialog.FileName));
+						MainWindow.WriteMessage(String.Format("{0}に保存しました。\n", dialog.FileName));
 					}
 				}
 			}
@@ -339,7 +340,7 @@ namespace NIDaqController {
 				nodes[targetColumn].type = window.resultType;
 				nodes[targetColumn].value = window.resultValue;
 			}
-			DebugWindow.WriteLine("セルの情報を更新");
+			MainWindow.WriteMessage("セルの情報を更新\n");
 			repaint();
 		}
 		//チャンネル情報の編集
@@ -353,7 +354,7 @@ namespace NIDaqController {
 				minVoltage = window.resultMinVoltage;
 				maxVoltage = window.resultMaxVoltage;
 			}
-			DebugWindow.WriteLine("チャンネルの情報を更新");
+			MainWindow.WriteMessage("チャンネルの情報を更新");
 			repaint();
 		}
 
