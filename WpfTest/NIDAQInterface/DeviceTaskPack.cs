@@ -57,6 +57,7 @@ namespace NIDaqInterface {
 		}
 		public void verify() {
 			task.Timing.ConfigureSampleClock("", sampleRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples,sampleLength);
+			task.Stream.Timeout = Math.Max(10000,(int)(sampleLength/sampleRate*1000)+1000);
 			if (aowriter != null && outputWaveArray != null) aowriter.WriteMultiSample(false, outputWaveArray);
 //			if (aireader != null) aireader.ReadMultiSample(1000);
 			if (dowriter != null && byteArray != null) dowriter.WriteMultiSamplePort(false, byteArray);
